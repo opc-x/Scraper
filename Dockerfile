@@ -10,10 +10,8 @@ ENV CHROMIUM_PATH=/usr/bin/chromium
 
 WORKDIR /app
 
-COPY pyproject.toml .
-RUN pip install --no-cache-dir .
-
 COPY . .
+RUN pip install --no-cache-dir .
 
 EXPOSE 8000
 
