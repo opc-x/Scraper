@@ -2,6 +2,14 @@ boss:
   enabled: true
   cookie: ""
 
+telegram:
+  enabled: false
+  bot_token: ""
+  group_ids: ""
+  llm_provider: "deepseek"
+  llm_api_key: ""
+  llm_base_url: ""
+
 liepin:
   enabled: false
   cookie: ""
