@@ -1,8 +1,11 @@
-from pathlib import Path
+import logging
 
-import yaml
+from sqlalchemy import text
 
-CONFIG_PATH = Path(__file__).parent.parent.parent / "channels.yaml"
+from app.db.connection import engine
+from app.db.schema import Base
+
+logger = logging.getLogger(__name__)
 
 CHANNEL_SCHEMA = {
     "boss": {
@@ -111,6 +114,11 @@ CHANNEL_SCHEMA = {
 }
 
 
+def _ensure_table():
+    if engine:
+        Base.metadata.create_all(engine, checkfirst=True)
+
+
 def _default_config() -> dict:
     cfg = {}
     for ch_id, schema in CHANNEL_SCHEMA.items():
@@ -123,26 +131,82 @@ def _default_config() -> dict:
 
 def load_config() -> dict:
     defaults = _default_config()
-    if not CONFIG_PATH.exists():
-        save_config(defaults)
+    if not engine:
         return defaults
-    with open(CONFIG_PATH, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    for ch_id, ch_defaults in defaults.items():
-        if ch_id not in data:
-            data[ch_id] = ch_defaults
-        else:
-            for k, v in ch_defaults.items():
-                if k not in data[ch_id]:
-                    data[ch_id][k] = v
-    return data
+
+    _ensure_table()
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("SELECT channel, enabled, config_data FROM channel_configs"))
+            for row in rows:
+                ch = row[0]
+                if ch in defaults:
+                    defaults[ch]["enabled"] = row[1]
+                    if row[2] and isinstance(row[2], dict):
+                        defaults[ch].update(row[2])
+    except Exception as e:
+        logger.warning("Failed to load config from DB: %s", e)
+
+    return defaults
 
 
 def save_config(data: dict):
-    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    if not engine:
+        return
+
+    _ensure_table()
+
+    try:
+        with engine.begin() as conn:
+            for ch_id, ch_cfg in data.items():
+                enabled = ch_cfg.pop("enabled", False) if "enabled" in ch_cfg else False
+                config_data = {k: v for k, v in ch_cfg.items()}
+                ch_cfg["enabled"] = enabled
+
+                conn.execute(
+                    text("""
+                        INSERT INTO channel_configs (channel, enabled, config_data, updated_at)
+                        VALUES (:ch, :enabled, :cfg, NOW())
+                        ON CONFLICT (channel) DO UPDATE
+                        SET enabled = :enabled, config_data = :cfg, updated_at = NOW()
+                    """),
+                    {"ch": ch_id, "enabled": enabled, "cfg": _json_dumps(config_data)},
+                )
+    except Exception as e:
+        logger.error("Failed to save config to DB: %s", e)
+
+
+def save_channel_config(channel: str, cfg: dict):
+    if not engine:
+        return
+
+    _ensure_table()
+
+    enabled = cfg.pop("enabled", False) if "enabled" in cfg else False
+    config_data = {k: v for k, v in cfg.items()}
+    cfg["enabled"] = enabled
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO channel_configs (channel, enabled, config_data, updated_at)
+                    VALUES (:ch, :enabled, :cfg, NOW())
+                    ON CONFLICT (channel) DO UPDATE
+                    SET enabled = :enabled, config_data = :cfg, updated_at = NOW()
+                """),
+                {"ch": channel, "enabled": enabled, "cfg": _json_dumps(config_data)},
+            )
+    except Exception as e:
+        logger.error("Failed to save channel config to DB: %s", e)
 
 
 def get_channel_config(channel: str) -> dict:
     cfg = load_config()
     return cfg.get(channel, {})
+
+
+def _json_dumps(obj):
+    import json
+    return json.dumps(obj, ensure_ascii=False)

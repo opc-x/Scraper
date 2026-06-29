@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
-from app.core.channel_config import get_channel_config, load_config, save_config
+from app.core.channel_config import get_channel_config, save_channel_config
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/telegram", tags=["telegram"])
@@ -107,9 +107,9 @@ async def verify_code(req: VerifyCodeRequest):
 
     session_str = _pending_client.session.save()
 
-    full_cfg = load_config()
-    full_cfg["telegram"]["_session"] = session_str
-    save_config(full_cfg)
+    cfg = get_channel_config("telegram")
+    cfg["_session"] = session_str
+    save_channel_config("telegram", cfg)
 
     await _pending_client.disconnect()
     _pending_client = None

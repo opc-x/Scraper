@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.core.channel_config import CHANNEL_SCHEMA, load_config, save_config
+from app.core.channel_config import CHANNEL_SCHEMA, load_config, save_channel_config
 
 router = APIRouter(prefix="/api", tags=["config"])
 
@@ -22,18 +22,15 @@ async def update_config(body: dict):
     if not channel or channel not in CHANNEL_SCHEMA:
         raise HTTPException(400, f"Unknown channel: {channel}")
 
-    cfg = load_config()
-    if channel not in cfg:
-        cfg[channel] = {}
-
     schema = CHANNEL_SCHEMA[channel]
     valid_keys = {"enabled"} | {f["key"] for f in schema["fields"]}
 
+    filtered = {}
     for k, v in body.items():
         if k == "channel":
             continue
         if k in valid_keys:
-            cfg[channel][k] = v
+            filtered[k] = v
 
-    save_config(cfg)
+    save_channel_config(channel, filtered)
     return {"ok": True, "channel": channel}

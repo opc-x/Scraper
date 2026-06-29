@@ -8,6 +8,15 @@ class Base(DeclarativeBase):
     pass
 
 
+class ChannelConfig(Base):
+    __tablename__ = "channel_configs"
+
+    channel: Mapped[str] = mapped_column(String(32), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(default=False)
+    config_data: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
 
