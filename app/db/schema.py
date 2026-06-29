@@ -8,6 +8,20 @@ class Base(DeclarativeBase):
     pass
 
 
+class TelegramAccount(Base):
+    __tablename__ = "telegram_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    label: Mapped[str] = mapped_column(String(64), nullable=False)
+    phone: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    api_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    api_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    session_str: Mapped[str] = mapped_column(Text, server_default="", default="")
+    is_active: Mapped[bool] = mapped_column(server_default="true", default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class ChannelConfig(Base):
     __tablename__ = "channel_configs"
 

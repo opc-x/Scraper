@@ -110,6 +110,20 @@
   .dot.green { background: #22c55e; }
   .dot.yellow { background: #f59e0b; }
   .dot.red { background: #ef4444; }
+
+  /* Account management */
+  .acct-list { margin-bottom: 12px; }
+  .acct-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #111; border: 1px solid #262626; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+  .acct-info { display: flex; align-items: center; gap: 8px; }
+  .acct-label { font-weight: 600; color: #e5e5e5; }
+  .acct-phone { color: #737373; }
+  .acct-btns { display: flex; gap: 4px; }
+  .acct-btns button { padding: 3px 8px; font-size: 11px; border-radius: 4px; }
+  .btn-danger { background: #7f1d1d; color: #fca5a5; border: none; cursor: pointer; }
+  .btn-danger:hover { background: #991b1b; }
+  .acct-add { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .acct-add input { font-size: 12px; padding: 6px 10px; flex: 1; min-width: 80px; }
+  .acct-add button { padding: 6px 12px; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -307,7 +321,7 @@ async function openConfig() {
           <div class="ch-body">
             <div class="ch-desc">${esc(chSchema.description)}</div>
             ${chSchema.fields.map(f => renderField(chId, f, cfg[f.key] || f.default || '')).join('')}
-            ${chId === 'telegram' ? '<div class="tg-auth" id="tg-auth-box"><div class="tg-auth-title">📱 Telegram 登录</div><div class="tg-auth-status" id="tg-auth-status">检查中...</div><div class="tg-auth-row"><button class="btn-tg" id="tg-send-code" onclick="tgSendCode()">发送验证码</button></div><div class="tg-auth-row" id="tg-code-row" style="display:none"><input type="text" id="tg-code" placeholder="输入验证码"><input type="password" id="tg-2fa" placeholder="两步验证密码（如有）" style="display:none"><button class="btn-tg" onclick="tgVerify()">验证</button></div><div class="ch-toast" id="tg-auth-toast"></div></div>' : ''}
+            ${chId === 'telegram' ? '<div class="tg-auth" id="tg-auth-box"><div class="tg-auth-title">📱 Telegram 账号管理</div><div class="acct-list" id="tg-acct-list"><div style="color:#525252">加载中...</div></div><div class="acct-add"><input type="text" id="tg-new-label" placeholder="备注名"><input type="text" id="tg-new-phone" placeholder="+66..."><input type="text" id="tg-new-api-id" placeholder="API ID"><input type="password" id="tg-new-api-hash" placeholder="API Hash"><button class="btn-tg" onclick="tgAddAccount()">添加账号</button></div><div class="ch-toast" id="tg-auth-toast"></div></div>' : ''}
             <div class="ch-footer">
               <label class="toggle">
                 <input type="checkbox" id="enabled-${chId}" ${enabled ? 'checked' : ''}>
@@ -403,98 +417,126 @@ document.getElementById('configModal').addEventListener('click', e => { if (e.ta
 function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 
-// ── Telegram 登录 ────────────────────────────
-async function checkTgStatus() {
-  const statusEl = document.getElementById('tg-auth-status');
-  const sendBtn = document.getElementById('tg-send-code');
-  if (!statusEl) return;
+// ── Telegram 多账号管理 ────────────────────────────
+async function loadTgAccounts() {
+  const list = document.getElementById('tg-acct-list');
+  if (!list) return;
   try {
-    const res = await fetch('/api/telegram/status');
+    const res = await fetch('/api/telegram/accounts');
     const data = await res.json();
-    if (data.status === 'logged_in') {
-      statusEl.innerHTML = '<span class="dot green"></span> 已登录，可以使用';
-      sendBtn.style.display = 'none';
-    } else if (data.status === 'not_configured') {
-      statusEl.innerHTML = '<span class="dot red"></span> 请先填写并保存上方配置';
-      sendBtn.disabled = true;
-    } else {
-      statusEl.innerHTML = `<span class="dot yellow"></span> ${esc(data.message)}`;
-      sendBtn.disabled = false;
+    if (!data.accounts.length) {
+      list.innerHTML = '<div style="color:#525252;font-size:12px">还没有账号，在下方添加</div>';
+      return;
     }
-  } catch {
-    statusEl.innerHTML = '<span class="dot red"></span> 无法检查状态';
-  }
-}
-
-async function tgSendCode() {
-  const btn = document.getElementById('tg-send-code');
-  const toast = document.getElementById('tg-auth-toast');
-  btn.disabled = true;
-  btn.textContent = '发送中...';
-  toast.textContent = '';
-  try {
-    const res = await fetch('/api/telegram/send-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}',
-    });
-    const data = await res.json();
-    if (data.ok) {
-      toast.className = 'ch-toast ok';
-      toast.textContent = data.message;
-      document.getElementById('tg-code-row').style.display = 'flex';
-      btn.textContent = '重新发送';
-    } else {
-      toast.className = 'ch-toast err';
-      toast.textContent = '❌ ' + (data.detail || '发送失败');
-      btn.textContent = '发送验证码';
-    }
+    list.innerHTML = data.accounts.map(a => `
+      <div class="acct-item" id="acct-${a.id}">
+        <div class="acct-info">
+          <span class="dot ${a.has_session ? 'green' : 'red'}"></span>
+          <span class="acct-label">${esc(a.label)}</span>
+          <span class="acct-phone">${esc(a.phone)}</span>
+          <span style="color:#525252">${a.has_session ? '已登录' : '未登录'}</span>
+        </div>
+        <div class="acct-btns">
+          ${!a.has_session ? `<button class="btn-tg" onclick="tgLogin(${a.id})">登录</button>` : ''}
+          <button class="btn-danger" onclick="tgDeleteAcct(${a.id})">删除</button>
+        </div>
+      </div>
+      <div id="login-row-${a.id}" style="display:none;margin-bottom:6px">
+        <div class="tg-auth-row">
+          <button class="btn-tg" onclick="tgSendCode(${a.id})">发送验证码</button>
+        </div>
+        <div class="tg-auth-row" id="code-row-${a.id}" style="display:none">
+          <input type="text" id="code-${a.id}" placeholder="输入验证码">
+          <input type="password" id="2fa-${a.id}" placeholder="两步验证密码（如有）" style="display:none">
+          <button class="btn-tg" onclick="tgVerify(${a.id})">验证</button>
+        </div>
+        <div class="ch-toast" id="login-toast-${a.id}"></div>
+      </div>
+    `).join('');
   } catch (e) {
-    toast.className = 'ch-toast err';
-    toast.textContent = '❌ ' + e.message;
-    btn.textContent = '发送验证码';
+    list.innerHTML = `<div style="color:#ef4444;font-size:12px">加载失败: ${esc(e.message)}</div>`;
   }
-  btn.disabled = false;
 }
 
-async function tgVerify() {
-  const code = document.getElementById('tg-code').value.trim();
-  const password = document.getElementById('tg-2fa').value.trim();
+async function tgAddAccount() {
+  const label = document.getElementById('tg-new-label').value.trim();
+  const phone = document.getElementById('tg-new-phone').value.trim();
+  const api_id = document.getElementById('tg-new-api-id').value.trim();
+  const api_hash = document.getElementById('tg-new-api-hash').value.trim();
   const toast = document.getElementById('tg-auth-toast');
-  if (!code) { toast.className = 'ch-toast err'; toast.textContent = '请输入验证码'; return; }
-  toast.textContent = '';
+  if (!label || !phone || !api_id || !api_hash) { toast.className='ch-toast err'; toast.textContent='请填完所有字段'; return; }
   try {
-    const res = await fetch('/api/telegram/verify-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, password }),
+    const res = await fetch('/api/telegram/accounts', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({label, phone, api_id, api_hash}),
     });
     const data = await res.json();
     if (data.ok) {
-      toast.className = 'ch-toast ok';
-      toast.textContent = '✅ ' + data.message;
-      document.getElementById('tg-auth-status').innerHTML = '<span class="dot green"></span> 已登录，可以使用';
-      document.getElementById('tg-send-code').style.display = 'none';
-      document.getElementById('tg-code-row').style.display = 'none';
+      toast.className='ch-toast ok'; toast.textContent=`✅ ${data.message}`;
+      document.getElementById('tg-new-label').value='';
+      document.getElementById('tg-new-phone').value='';
+      document.getElementById('tg-new-api-id').value='';
+      document.getElementById('tg-new-api-hash').value='';
+      loadTgAccounts();
+    } else {
+      toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'添加失败');
+    }
+  } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
+}
+
+async function tgDeleteAcct(id) {
+  if (!confirm('确定删除这个账号？')) return;
+  await fetch(`/api/telegram/accounts/${id}`, {method:'DELETE'});
+  loadTgAccounts();
+}
+
+function tgLogin(id) {
+  const row = document.getElementById(`login-row-${id}`);
+  row.style.display = row.style.display === 'none' ? 'block' : 'none';
+}
+
+async function tgSendCode(id) {
+  const toast = document.getElementById(`login-toast-${id}`);
+  toast.textContent = '发送中...'; toast.className = 'ch-toast';
+  try {
+    const res = await fetch(`/api/telegram/accounts/${id}/send-code`, {method:'POST'});
+    const data = await res.json();
+    if (data.ok) {
+      toast.className='ch-toast ok'; toast.textContent=data.message;
+      document.getElementById(`code-row-${id}`).style.display='flex';
+    } else {
+      toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'发送失败');
+    }
+  } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
+}
+
+async function tgVerify(id) {
+  const code = document.getElementById(`code-${id}`).value.trim();
+  const password = document.getElementById(`2fa-${id}`).value.trim();
+  const toast = document.getElementById(`login-toast-${id}`);
+  if (!code) { toast.className='ch-toast err'; toast.textContent='请输入验证码'; return; }
+  try {
+    const res = await fetch(`/api/telegram/accounts/${id}/verify-code`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({code, password}),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast.className='ch-toast ok'; toast.textContent='✅ '+data.message;
+      loadTgAccounts();
     } else if (data.need_2fa) {
-      document.getElementById('tg-2fa').style.display = 'block';
-      toast.className = 'ch-toast err';
-      toast.textContent = '需要两步验证密码';
+      document.getElementById(`2fa-${id}`).style.display='block';
+      toast.className='ch-toast err'; toast.textContent='需要输入两步验证密码';
     } else {
-      toast.className = 'ch-toast err';
-      toast.textContent = '❌ ' + (data.detail || '验证失败');
+      toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'验证失败');
     }
-  } catch (e) {
-    toast.className = 'ch-toast err';
-    toast.textContent = '❌ ' + e.message;
-  }
+  } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
 }
 
-// openConfig 后自动检查 Telegram 状态
 const _origOpenConfig = openConfig;
 openConfig = async function() {
   await _origOpenConfig();
-  setTimeout(checkTgStatus, 300);
+  setTimeout(loadTgAccounts, 300);
 };
 </script>
 </body>

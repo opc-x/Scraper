@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from app.adapters.registry import close_all
-from app.core.telegram_client import close_telegram_client
+from app.core.telegram_client import close_all_clients
 from app.api.routes import channels, config, save, search, telegram_auth, telegram_ops
 from app.core.config import settings
 
@@ -15,7 +15,7 @@ from app.core.config import settings
 async def lifespan(app: FastAPI):
     yield
     await close_all()
-    await close_telegram_client()
+    await close_all_clients()
 
 
 app = FastAPI(
