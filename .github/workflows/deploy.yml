@@ -41,12 +41,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Delete old container
+        run: az container delete --resource-group scraper-rg --name scraper --yes 2>/dev/null || true
+
       - name: Deploy to ACI
         run: |
           az container create \
             --resource-group scraper-rg \
             --name scraper \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --cpu 1 \
             --memory 2 \
             --ports 8000 \
