@@ -5,7 +5,7 @@ import re
 from DrissionPage import ChromiumPage, ChromiumOptions
 
 from app.adapters.base import BaseAdapter
-from app.core.config import settings
+from app.core.channel_config import get_channel_config
 from app.core.models import Job, SearchRequest
 
 BOSS_CITY_MAP = {
@@ -31,7 +31,7 @@ BOSS_CITY_MAP = {
     "昆明": "101290100",
 }
 
-API_PATTERN = re.compile(r"wapi/zpgeek/search/joblist")
+API_PATTERN = "wapi/zpgeek/search/joblist"
 
 
 class BossAdapter(BaseAdapter):
@@ -39,16 +39,38 @@ class BossAdapter(BaseAdapter):
 
     def __init__(self):
         self._page: ChromiumPage | None = None
+        self._cookie_hash: str = ""
+
+    async def reload(self):
+        await self.close()
+        self._cookie_hash = ""
 
     def _ensure_page(self) -> ChromiumPage:
+        cfg = get_channel_config("boss")
+        cookie = cfg.get("cookie", "")
+        cookie_hash = str(hash(cookie))
+        if self._page is not None and cookie_hash != self._cookie_hash:
+            self._page.quit()
+            self._page = None
         if self._page is None:
             opts = ChromiumOptions()
             opts.headless()
             opts.set_argument("--no-sandbox")
             opts.set_argument("--disable-gpu")
-            if settings.boss_cookie:
-                opts.set_argument(f"--cookie={settings.boss_cookie}")
             self._page = ChromiumPage(opts)
+            if cookie:
+                self._page.get("https://www.zhipin.com")
+                for pair in cookie.split(";"):
+                    pair = pair.strip()
+                    if "=" in pair:
+                        k, v = pair.split("=", 1)
+                        self._page.set.cookies({
+                            "name": k.strip(),
+                            "value": v.strip(),
+                            "domain": ".zhipin.com",
+                            "path": "/",
+                        })
+            self._cookie_hash = cookie_hash
         return self._page
 
     async def search(self, req: SearchRequest) -> list[Job]:

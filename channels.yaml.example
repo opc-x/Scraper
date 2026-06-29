@@ -1,0 +1,11 @@
+boss:
+  enabled: true
+  cookie: ""
+
+liepin:
+  enabled: false
+  cookie: ""
+
+zhilian:
+  enabled: false
+  cookie: ""

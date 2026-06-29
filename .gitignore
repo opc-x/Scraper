@@ -4,6 +4,7 @@ __pycache__/
 dist/
 build/
 .env
+channels.yaml
 .venv/
 venv/
 *.db

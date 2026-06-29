@@ -8,14 +8,17 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, 'SF Pro', 'Helvetica Neue', sans-serif; background: #0a0a0a; color: #e5e5e5; min-height: 100vh; }
   .container { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
   h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
   h1 span { color: #22c55e; }
-  .subtitle { color: #737373; font-size: 14px; margin-bottom: 32px; }
+  .subtitle { color: #737373; font-size: 14px; }
+  .btn-config { background: #262626; color: #a3a3a3; border: 1px solid #333; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .btn-config:hover { border-color: #22c55e; color: #22c55e; }
   .search-box { background: #171717; border: 1px solid #262626; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
   .row { display: flex; gap: 12px; margin-bottom: 12px; }
   .row:last-child { margin-bottom: 0; }
-  input, select { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: #e5e5e5; font-size: 14px; flex: 1; outline: none; transition: border-color 0.2s; }
-  input:focus, select:focus { border-color: #22c55e; }
+  input, select, textarea { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: #e5e5e5; font-size: 14px; flex: 1; outline: none; transition: border-color 0.2s; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { border-color: #22c55e; }
   select { cursor: pointer; }
   button { background: #22c55e; color: #0a0a0a; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
   button:hover { opacity: 0.85; }
@@ -45,12 +48,54 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   a { color: #22c55e; text-decoration: none; }
   a:hover { text-decoration: underline; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #171717; border: 1px solid #333; border-radius: 14px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; }
+  .modal-header h2 { font-size: 18px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: #737373; font-size: 20px; cursor: pointer; padding: 4px 8px; }
+  .modal-close:hover { color: #e5e5e5; }
+  .modal-body { padding: 20px 24px 24px; }
+
+  /* Channel config cards */
+  .ch-card { background: #0a0a0a; border: 1px solid #262626; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .ch-card:last-child { margin-bottom: 0; }
+  .ch-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ch-name { font-size: 15px; font-weight: 600; }
+  .ch-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .ch-status.active { background: #052e16; color: #22c55e; }
+  .ch-status.no_cookie { background: #422006; color: #f59e0b; }
+  .ch-status.planned { background: #1a1a1a; color: #737373; }
+  .ch-desc { color: #737373; font-size: 12px; margin-bottom: 12px; }
+  .ch-field { margin-bottom: 10px; }
+  .ch-field label { display: block; font-size: 12px; color: #999; margin-bottom: 4px; }
+  .ch-field textarea { width: 100%; min-height: 60px; resize: vertical; font-size: 12px; }
+  .ch-row { display: flex; justify-content: space-between; align-items: center; }
+  .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider { position: absolute; inset: 0; background: #333; border-radius: 11px; transition: 0.2s; }
+  .toggle .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #737373; border-radius: 50%; transition: 0.2s; }
+  .toggle input:checked + .slider { background: #22c55e; }
+  .toggle input:checked + .slider::before { transform: translateX(18px); background: #fff; }
+  .btn-save-ch { background: #22c55e; color: #0a0a0a; border: none; border-radius: 6px; padding: 6px 16px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-save-ch:hover { opacity: 0.85; }
+  .ch-toast { font-size: 12px; margin-left: 8px; }
+  .ch-toast.ok { color: #22c55e; }
+  .ch-toast.err { color: #ef4444; }
+  .ch-help { font-size: 11px; color: #525252; margin-top: 6px; line-height: 1.5; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1><span>Scraper</span> 多渠道职位狙击</h1>
-  <p class="subtitle">输入条件 → 实时抓取 → AI 归一化 → 精准命中</p>
+  <div class="header">
+    <div>
+      <h1><span>Scraper</span> 多渠道职位狙击</h1>
+      <p class="subtitle">输入条件 → 实时抓取 → AI 归一化 → 精准命中</p>
+    </div>
+    <button class="btn-config" onclick="openConfig()">⚙️ 渠道配置</button>
+  </div>
 
   <div class="search-box">
     <div class="row">
@@ -71,11 +116,7 @@
         <option value="苏州">苏州</option>
         <option value="厦门">厦门</option>
       </select>
-      <select id="channel">
-        <option value="boss">BOSS直聘</option>
-        <option value="liepin" disabled>猎聘 (即将接入)</option>
-        <option value="zhilian" disabled>智联 (即将接入)</option>
-      </select>
+      <select id="channel"></select>
     </div>
     <div class="row">
       <input id="salary_min" type="number" placeholder="最低月薪 (K)" style="flex:0.5">
@@ -90,7 +131,7 @@
     </div>
     <div class="stat">
       <div class="stat-label">当前渠道</div>
-      <div class="stat-value" id="ch">BOSS直聘</div>
+      <div class="stat-value" id="ch">—</div>
     </div>
     <div class="stat">
       <div class="stat-label">耗时</div>
@@ -103,7 +144,57 @@
   </div>
 </div>
 
+<!-- Config Modal -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙️ 渠道配置</h2>
+      <button class="modal-close" onclick="closeConfig()">✕</button>
+    </div>
+    <div class="modal-body" id="configBody">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+</div>
+
 <script>
+const STATUS_TEXT = { active: '已就绪', no_cookie: '缺 Cookie', planned: '待接入' };
+const COOKIE_HELP = {
+  boss: '打开 zhipin.com 登录 → F12 → Application → Cookies → 全部复制粘贴到这里',
+  liepin: '打开 liepin.com 登录 → F12 → Application → Cookies → 全部复制粘贴到这里',
+  zhilian: '打开 zhaopin.com 登录 → F12 → Application → Cookies → 全部复制粘贴到这里',
+};
+
+// ── 初始化渠道下拉 ────────────────────────────
+async function loadChannels() {
+  try {
+    const res = await fetch('/api/channels');
+    const data = await res.json();
+    const sel = document.getElementById('channel');
+    sel.innerHTML = '';
+    data.channels.forEach(ch => {
+      const opt = document.createElement('option');
+      opt.value = ch.id;
+      opt.textContent = ch.name;
+      if (ch.status !== 'active') {
+        opt.disabled = true;
+        opt.textContent += ch.status === 'no_cookie' ? ' (缺Cookie)' : ' (即将接入)';
+      }
+      sel.appendChild(opt);
+    });
+    // 默认选第一个可用的
+    const active = data.channels.find(c => c.status === 'active');
+    if (active) {
+      sel.value = active.id;
+      document.getElementById('ch').textContent = active.name;
+    }
+  } catch (e) {
+    console.error('Failed to load channels:', e);
+  }
+}
+loadChannels();
+
+// ── 搜索 ────────────────────────────
 async function doSearch() {
   const keyword = document.getElementById('keyword').value.trim();
   if (!keyword) return;
@@ -112,10 +203,14 @@ async function doSearch() {
   btn.disabled = true;
   document.getElementById('results').innerHTML = '<div class="loading">正在狙击目标...</div>';
 
+  const channel = document.getElementById('channel').value;
+  const channelText = document.getElementById('channel').selectedOptions[0]?.textContent || channel;
+  document.getElementById('ch').textContent = channelText;
+
   const body = {
     keyword,
     city: document.getElementById('city').value,
-    channel: document.getElementById('channel').value,
+    channel,
     salary_min: parseInt(document.getElementById('salary_min').value) || null,
   };
   if (body.salary_min) body.salary_min *= 1000;
@@ -179,8 +274,103 @@ async function saveJob(el, jobJson) {
   } catch { el.textContent = '❌ 失败'; }
 }
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+// ── 配置弹窗 ────────────────────────────
+async function openConfig() {
+  document.getElementById('configModal').classList.add('show');
+  const body = document.getElementById('configBody');
+  body.innerHTML = '<div class="loading">加载中...</div>';
 
+  try {
+    const [chRes, cfgRes] = await Promise.all([
+      fetch('/api/channels').then(r => r.json()),
+      fetch('/api/channels/config').then(r => r.json()),
+    ]);
+
+    const channels = chRes.channels;
+    const configs = cfgRes.channels;
+
+    body.innerHTML = channels.map(ch => {
+      const cfg = configs[ch.id] || {};
+      const cookie = cfg.cookie || '';
+      const enabled = cfg.enabled ?? false;
+      return `
+        <div class="ch-card" id="ch-${ch.id}">
+          <div class="ch-top">
+            <span class="ch-name">${esc(ch.name)}</span>
+            <span class="ch-status ${ch.status}">${STATUS_TEXT[ch.status] || ch.status}</span>
+          </div>
+          <div class="ch-desc">${esc(ch.description)}</div>
+          <div class="ch-field">
+            <label>Cookie</label>
+            <textarea id="cookie-${ch.id}" placeholder="从浏览器复制 Cookie 粘贴到这里...">${esc(cookie)}</textarea>
+            <div class="ch-help">${COOKIE_HELP[ch.id] || ''}</div>
+          </div>
+          <div class="ch-row">
+            <label class="toggle">
+              <input type="checkbox" id="enabled-${ch.id}" ${enabled ? 'checked' : ''}>
+              <span class="slider"></span>
+            </label>
+            <div>
+              <button class="btn-save-ch" onclick="saveChannel('${ch.id}')">保存</button>
+              <span class="ch-toast" id="toast-${ch.id}"></span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    body.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
+  }
+}
+
+function closeConfig() {
+  document.getElementById('configModal').classList.remove('show');
+  loadChannels();
+}
+
+async function saveChannel(id) {
+  const cookie = document.getElementById(`cookie-${id}`).value.trim();
+  const enabled = document.getElementById(`enabled-${id}`).checked;
+  const toast = document.getElementById(`toast-${id}`);
+  toast.textContent = '';
+
+  try {
+    const res = await fetch('/api/channels/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: id, cookie, enabled }),
+    });
+    if (res.ok) {
+      toast.className = 'ch-toast ok';
+      toast.textContent = '✅ 已保存';
+      // 刷新状态标签
+      const statusEl = document.querySelector(`#ch-${id} .ch-status`);
+      if (enabled && cookie) {
+        statusEl.className = 'ch-status active';
+        statusEl.textContent = '已就绪';
+      } else if (enabled) {
+        statusEl.className = 'ch-status no_cookie';
+        statusEl.textContent = '缺 Cookie';
+      } else {
+        statusEl.className = 'ch-status planned';
+        statusEl.textContent = '待接入';
+      }
+    } else {
+      toast.className = 'ch-toast err';
+      toast.textContent = '❌ 保存失败';
+    }
+  } catch (e) {
+    toast.className = 'ch-toast err';
+    toast.textContent = '❌ ' + e.message;
+  }
+}
+
+// 点遮罩关闭
+document.getElementById('configModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeConfig();
+});
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 </script>
 </body>

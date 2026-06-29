@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from app.adapters.registry import close_all
-from app.api.routes import channels, save, search
+from app.api.routes import channels, config, save, search
 from app.core.config import settings
 
 
@@ -33,6 +33,7 @@ app.add_middleware(
 app.include_router(search.router)
 app.include_router(channels.router)
 app.include_router(save.router)
+app.include_router(config.router)
 
 
 @app.get("/", response_class=HTMLResponse)
