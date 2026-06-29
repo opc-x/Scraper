@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     boss_cookie: str = ""
 
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 80
     debug: bool = False
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

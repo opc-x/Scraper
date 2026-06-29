@@ -56,7 +56,7 @@ jobs:
             --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" \
             --cpu 1 \
             --memory 2 \
-            --ports 8000 \
+            --ports 80 \
             --ip-address Public \
             --location southeastasia \
             --os-type Linux \
