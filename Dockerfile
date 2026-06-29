@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir .
 
 EXPOSE 80
 
-CMD ["python", "-u", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["python", "-u", "-c", "import app.main; import uvicorn; uvicorn.run('app.main:app', host='0.0.0.0', port=80)"]
