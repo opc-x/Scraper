@@ -2,12 +2,10 @@ import json
 import logging
 
 import httpx
-from telethon import TelegramClient
-from telethon.sessions import StringSession
-
 from app.adapters.base import BaseAdapter
 from app.core.channel_config import get_channel_config
 from app.core.models import Job, SearchRequest
+from app.core.telegram_client import get_telegram_client
 
 logger = logging.getLogger(__name__)
 
@@ -45,37 +43,12 @@ class TelegramAdapter(BaseAdapter):
     name = "telegram"
 
     def __init__(self):
-        self._client: TelegramClient | None = None
-        self._connected = False
-
-    async def _ensure_client(self) -> TelegramClient | None:
-        cfg = get_channel_config("telegram")
-        api_id = cfg.get("api_id", "")
-        api_hash = cfg.get("api_hash", "")
-        phone = cfg.get("phone", "")
-
-        if not api_id or not api_hash or not phone:
-            return None
-
-        if self._client and self._connected:
-            return self._client
-
-        session_str = cfg.get("_session", "")
-        session = StringSession(session_str) if session_str else StringSession()
-
-        self._client = TelegramClient(session, int(api_id), api_hash)
-        await self._client.connect()
-
-        if not await self._client.is_user_authorized():
-            return None
-
-        self._connected = True
-        return self._client
+        pass
 
     async def search(self, req: SearchRequest) -> list[Job]:
         cfg = get_channel_config("telegram")
 
-        client = await self._ensure_client()
+        client = await get_telegram_client()
         if not client:
             return []
 
@@ -243,7 +216,4 @@ class TelegramAdapter(BaseAdapter):
         return True
 
     async def close(self):
-        if self._client:
-            await self._client.disconnect()
-            self._client = None
-            self._connected = False
+        pass

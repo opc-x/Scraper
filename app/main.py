@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from app.adapters.registry import close_all
-from app.api.routes import channels, config, save, search, telegram_auth
+from app.core.telegram_client import close_telegram_client
+from app.api.routes import channels, config, save, search, telegram_auth, telegram_ops
 from app.core.config import settings
 
 
@@ -14,6 +15,7 @@ from app.core.config import settings
 async def lifespan(app: FastAPI):
     yield
     await close_all()
+    await close_telegram_client()
 
 
 app = FastAPI(
@@ -35,6 +37,7 @@ app.include_router(channels.router)
 app.include_router(save.router)
 app.include_router(config.router)
 app.include_router(telegram_auth.router)
+app.include_router(telegram_ops.router)
 
 
 @app.get("/", response_class=HTMLResponse)
