@@ -5,6 +5,7 @@ dist/
 build/
 .env
 channels.yaml
+*.session
 .venv/
 venv/
 *.db

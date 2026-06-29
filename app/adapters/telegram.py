@@ -1,19 +1,23 @@
 import asyncio
 import json
 import logging
+from pathlib import Path
 
 import httpx
+from telethon import TelegramClient
+from telethon.sessions import StringSession
 
 from app.adapters.base import BaseAdapter
-from app.core.channel_config import get_channel_config
+from app.core.channel_config import get_channel_config, load_config, save_config
 from app.core.models import Job, SearchRequest
 
 logger = logging.getLogger(__name__)
 
+SESSION_PATH = Path(__file__).parent.parent.parent / "telegram.session"
+
 LLM_ENDPOINTS = {
     "deepseek": "https://api.deepseek.com/v1/chat/completions",
     "openai": "https://api.openai.com/v1/chat/completions",
-    "anthropic": "https://api.anthropic.com/v1/messages",
 }
 
 LLM_MODELS = {
@@ -25,18 +29,18 @@ LLM_MODELS = {
 EXTRACT_PROMPT = """你是一个招聘信息提取助手。从下面的聊天消息中提取职位信息。
 
 要求：
-1. 只提取真实的招聘/求职信息，忽略闲聊
+1. 只提取真实的招聘/求职信息，忽略闲聊、广告、培训
 2. 如果消息不包含招聘信息，返回空数组
-3. 返回 JSON 数组，每个元素包含以下字段：
+3. 返回 JSON 格式 {"jobs": [...]}，每个元素：
    - title: 职位名称
    - company: 公司名（没有则填"未知"）
-   - salary: 薪资描述（没有则填空）
+   - salary: 薪资描述（没有则留空）
    - city: 工作城市（没有则填"远程"）
    - experience: 经验要求
    - education: 学历要求
    - skills: 技能标签数组
-   - description: 职位描述摘要
-   - is_job: true 表示招聘信息，false 表示不是
+   - description: 职位描述/要求摘要（保留关键信息）
+   - contact: 联系方式（如有）
 
 只返回 JSON，不要其他内容。"""
 
@@ -45,31 +49,53 @@ class TelegramAdapter(BaseAdapter):
     name = "telegram"
 
     def __init__(self):
-        self._polling_task: asyncio.Task | None = None
+        self._client: TelegramClient | None = None
+        self._connected = False
+
+    async def _ensure_client(self) -> TelegramClient | None:
+        cfg = get_channel_config("telegram")
+        api_id = cfg.get("api_id", "")
+        api_hash = cfg.get("api_hash", "")
+        phone = cfg.get("phone", "")
+
+        if not api_id or not api_hash or not phone:
+            return None
+
+        if self._client and self._connected:
+            return self._client
+
+        session_str = cfg.get("_session", "")
+        session = StringSession(session_str) if session_str else StringSession()
+
+        self._client = TelegramClient(session, int(api_id), api_hash)
+        await self._client.connect()
+
+        if not await self._client.is_user_authorized():
+            return None
+
+        self._connected = True
+        return self._client
 
     async def search(self, req: SearchRequest) -> list[Job]:
         cfg = get_channel_config("telegram")
-        bot_token = cfg.get("bot_token", "")
         group_ids_raw = cfg.get("group_ids", "")
 
-        if not bot_token or not group_ids_raw:
+        if not group_ids_raw:
             return []
 
-        group_ids = [g.strip() for g in group_ids_raw.replace(",", "\n").split("\n") if g.strip()]
-        if not group_ids:
+        client = await self._ensure_client()
+        if not client:
             return []
 
-        messages = await self._fetch_recent_messages(bot_token, group_ids)
+        groups = [g.strip() for g in group_ids_raw.replace(",", "\n").split("\n") if g.strip()]
+        if not groups:
+            return []
+
+        messages = await self._fetch_messages(client, groups, req.keyword)
         if not messages:
             return []
 
-        keyword = req.keyword.lower() if req.keyword else ""
-        relevant = [m for m in messages if keyword in m.lower()] if keyword else messages
-
-        if not relevant:
-            return []
-
-        jobs = await self._extract_jobs_with_llm(cfg, relevant)
+        jobs = await self._extract_jobs_with_llm(cfg, messages)
 
         if req.salary_min:
             jobs = [j for j in jobs if not j.salary or self._salary_above(j.salary, req.salary_min)]
@@ -78,25 +104,31 @@ class TelegramAdapter(BaseAdapter):
 
         return jobs
 
-    async def _fetch_recent_messages(self, bot_token: str, group_ids: list[str]) -> list[str]:
+    async def _fetch_messages(
+        self, client: TelegramClient, groups: list[str], keyword: str
+    ) -> list[str]:
         messages = []
-        async with httpx.AsyncClient(timeout=15) as client:
-            for gid in group_ids:
+        keyword_lower = keyword.lower() if keyword else ""
+
+        for group_ref in groups:
+            try:
                 try:
-                    url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
-                    res = await client.get(url, params={"offset": -100, "allowed_updates": '["message"]'})
-                    data = res.json()
-                    if not data.get("ok"):
-                        logger.warning("Telegram API error for group %s: %s", gid, data)
+                    entity = int(group_ref) if group_ref.lstrip("-").isdigit() else group_ref
+                except ValueError:
+                    entity = group_ref
+
+                entity = await client.get_entity(entity)
+
+                async for msg in client.iter_messages(entity, limit=100):
+                    if not msg.text or len(msg.text) < 20:
                         continue
-                    for update in data.get("result", []):
-                        msg = update.get("message", {})
-                        chat_id = str(msg.get("chat", {}).get("id", ""))
-                        text = msg.get("text", "")
-                        if chat_id == gid and text and len(text) > 20:
-                            messages.append(text)
-                except Exception as e:
-                    logger.warning("Failed to fetch from group %s: %s", gid, e)
+                    if keyword_lower and keyword_lower not in msg.text.lower():
+                        continue
+                    messages.append(msg.text)
+
+            except Exception as e:
+                logger.warning("Failed to fetch from group %s: %s", group_ref, e)
+
         return messages
 
     async def _extract_jobs_with_llm(self, cfg: dict, messages: list[str]) -> list[Job]:
@@ -107,13 +139,13 @@ class TelegramAdapter(BaseAdapter):
         if not api_key:
             return []
 
-        endpoint = base_url.rstrip("/") + "/chat/completions" if base_url else LLM_ENDPOINTS.get(provider, "")
-        model = LLM_MODELS.get(provider, "deepseek-chat")
-
-        batch_text = "\n---\n".join(messages[:50])
+        batch_text = "\n\n---\n\n".join(messages[:50])
 
         if provider == "anthropic":
-            return await self._call_anthropic(cfg, batch_text)
+            return await self._call_anthropic(api_key, base_url, batch_text)
+
+        endpoint = base_url.rstrip("/") + "/chat/completions" if base_url else LLM_ENDPOINTS.get(provider, LLM_ENDPOINTS["deepseek"])
+        model = LLM_MODELS.get(provider, "deepseek-chat")
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         body = {
@@ -123,12 +155,11 @@ class TelegramAdapter(BaseAdapter):
                 {"role": "user", "content": batch_text},
             ],
             "temperature": 0.1,
-            "response_format": {"type": "json_object"},
         }
 
         try:
-            async with httpx.AsyncClient(timeout=60) as client:
-                res = await client.post(endpoint, headers=headers, json=body)
+            async with httpx.AsyncClient(timeout=60) as http:
+                res = await http.post(endpoint, headers=headers, json=body)
                 data = res.json()
                 content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 return self._parse_llm_response(content)
@@ -136,26 +167,22 @@ class TelegramAdapter(BaseAdapter):
             logger.error("LLM call failed: %s", e)
             return []
 
-    async def _call_anthropic(self, cfg: dict, text: str) -> list[Job]:
-        api_key = cfg.get("llm_api_key", "")
-        base_url = cfg.get("llm_base_url", "").rstrip("/") or "https://api.anthropic.com"
-        model = LLM_MODELS["anthropic"]
-
+    async def _call_anthropic(self, api_key: str, base_url: str, text: str) -> list[Job]:
+        url = (base_url.rstrip("/") or "https://api.anthropic.com") + "/v1/messages"
         headers = {
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
             "Content-Type": "application/json",
         }
         body = {
-            "model": model,
+            "model": LLM_MODELS["anthropic"],
             "max_tokens": 4096,
             "system": EXTRACT_PROMPT,
             "messages": [{"role": "user", "content": text}],
         }
-
         try:
-            async with httpx.AsyncClient(timeout=60) as client:
-                res = await client.post(f"{base_url}/v1/messages", headers=headers, json=body)
+            async with httpx.AsyncClient(timeout=60) as http:
+                res = await http.post(url, headers=headers, json=body)
                 data = res.json()
                 content = data.get("content", [{}])[0].get("text", "")
                 return self._parse_llm_response(content)
@@ -169,18 +196,22 @@ class TelegramAdapter(BaseAdapter):
             if content.startswith("```"):
                 content = content.split("\n", 1)[1].rsplit("```", 1)[0]
             parsed = json.loads(content)
-            items = parsed if isinstance(parsed, list) else parsed.get("jobs", parsed.get("data", []))
+            items = parsed if isinstance(parsed, list) else parsed.get("jobs", [])
         except (json.JSONDecodeError, AttributeError):
-            logger.warning("Failed to parse LLM response")
+            logger.warning("Failed to parse LLM response: %s", content[:200])
             return []
 
         jobs = []
         for item in items:
-            if not isinstance(item, dict) or not item.get("is_job", True):
+            if not isinstance(item, dict):
                 continue
             title = item.get("title", "")
             if not title:
                 continue
+            contact = item.get("contact", "")
+            desc = item.get("description", "")
+            if contact:
+                desc = f"{desc}\n联系方式: {contact}" if desc else f"联系方式: {contact}"
             jobs.append(
                 Job(
                     channel="telegram",
@@ -192,7 +223,7 @@ class TelegramAdapter(BaseAdapter):
                     experience=item.get("experience", ""),
                     education=item.get("education", ""),
                     skills=item.get("skills", []),
-                    description=item.get("description", ""),
+                    description=desc,
                     url="",
                     raw=item,
                 )
@@ -205,12 +236,13 @@ class TelegramAdapter(BaseAdapter):
         m = re.search(r"(\d+)", salary_desc)
         if m:
             num = int(m.group(1))
-            if "k" in salary_desc.lower() or "K" in salary_desc:
+            if "k" in salary_desc.lower():
                 num *= 1000
             return num >= min_val
         return True
 
     async def close(self):
-        if self._polling_task and not self._polling_task.done():
-            self._polling_task.cancel()
-            self._polling_task = None
+        if self._client:
+            await self._client.disconnect()
+            self._client = None
+            self._connected = False
