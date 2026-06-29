@@ -12,8 +12,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 COPY . .
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir . && echo "[build] pip install OK"
 
 EXPOSE 80
 
-CMD ["python", "-u", "-c", "import app.main; import uvicorn; uvicorn.run('app.main:app', host='0.0.0.0', port=80)"]
+CMD ["sh", "-c", "echo '[boot] starting...' && python -c 'from app.main import app; print(\"[boot] import OK\")' && exec python -u -m uvicorn app.main:app --host 0.0.0.0 --port 80"]
