@@ -1,19 +1,15 @@
-import asyncio
 import json
 import logging
-from pathlib import Path
 
 import httpx
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
 from app.adapters.base import BaseAdapter
-from app.core.channel_config import get_channel_config, load_config, save_config
+from app.core.channel_config import get_channel_config
 from app.core.models import Job, SearchRequest
 
 logger = logging.getLogger(__name__)
-
-SESSION_PATH = Path(__file__).parent.parent.parent / "telegram.session"
 
 LLM_ENDPOINTS = {
     "deepseek": "https://api.deepseek.com/v1/chat/completions",
@@ -78,20 +74,25 @@ class TelegramAdapter(BaseAdapter):
 
     async def search(self, req: SearchRequest) -> list[Job]:
         cfg = get_channel_config("telegram")
-        group_ids_raw = cfg.get("group_ids", "")
-
-        if not group_ids_raw:
-            return []
 
         client = await self._ensure_client()
         if not client:
             return []
 
-        groups = [g.strip() for g in group_ids_raw.replace(",", "\n").split("\n") if g.strip()]
-        if not groups:
-            return []
+        messages = []
 
-        messages = await self._fetch_messages(client, groups, req.keyword)
+        group_ids_raw = cfg.get("group_ids", "")
+        groups = [g.strip() for g in group_ids_raw.replace(",", "\n").split("\n") if g.strip()]
+        if groups:
+            msgs = await self._fetch_from_entities(client, groups, req.keyword)
+            messages.extend(msgs)
+
+        dm_ids_raw = cfg.get("dm_users", "")
+        dm_users = [u.strip() for u in dm_ids_raw.replace(",", "\n").split("\n") if u.strip()]
+        if dm_users:
+            msgs = await self._fetch_from_entities(client, dm_users, req.keyword)
+            messages.extend(msgs)
+
         if not messages:
             return []
 
@@ -104,18 +105,18 @@ class TelegramAdapter(BaseAdapter):
 
         return jobs
 
-    async def _fetch_messages(
-        self, client: TelegramClient, groups: list[str], keyword: str
+    async def _fetch_from_entities(
+        self, client: TelegramClient, refs: list[str], keyword: str
     ) -> list[str]:
         messages = []
         keyword_lower = keyword.lower() if keyword else ""
 
-        for group_ref in groups:
+        for ref in refs:
             try:
                 try:
-                    entity = int(group_ref) if group_ref.lstrip("-").isdigit() else group_ref
+                    entity = int(ref) if ref.lstrip("-").isdigit() else ref
                 except ValueError:
-                    entity = group_ref
+                    entity = ref
 
                 entity = await client.get_entity(entity)
 
@@ -127,7 +128,7 @@ class TelegramAdapter(BaseAdapter):
                     messages.append(msg.text)
 
             except Exception as e:
-                logger.warning("Failed to fetch from group %s: %s", group_ref, e)
+                logger.warning("Failed to fetch from %s: %s", ref, e)
 
         return messages
 

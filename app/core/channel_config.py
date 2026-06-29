@@ -56,7 +56,15 @@ CHANNEL_SCHEMA = {
                 "type": "textarea",
                 "placeholder": "每行一个：群用户名(如 python_cn) 或数字 ID(如 -1001234567890)",
                 "help": "你已加入的群/频道，用户名或数字 ID 都行",
-                "required": True,
+                "required": False,
+            },
+            {
+                "key": "dm_users",
+                "label": "监听私聊",
+                "type": "textarea",
+                "placeholder": "每行一个：用户名(如 hr_xiaoli) 或手机号(如 +8613800138000)",
+                "help": "猎头/HR 的 Telegram 用户名或手机号，自动读取对话消息",
+                "required": False,
             },
             {
                 "key": "llm_provider",
