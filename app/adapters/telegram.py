@@ -79,7 +79,7 @@ class TelegramAdapter(BaseAdapter):
         return jobs
 
     async def _fetch_from_entities(
-        self, client: TelegramClient, refs: list[str], keyword: str
+        self, client, refs: list[str], keyword: str
     ) -> list[str]:
         messages = []
         keyword_lower = keyword.lower() if keyword else ""
