@@ -45,20 +45,25 @@ jobs:
         run: az container delete --resource-group scraper-rg --name scraper --yes 2>/dev/null || true
 
       - name: Deploy to ACI
+        env:
+          DB_URL: ${{ secrets.DATABASE_URL }}
+          OAI_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OAI_MODEL: ${{ secrets.OPENAI_MODEL }}
         run: |
           az container create \
             --resource-group scraper-rg \
             --name scraper \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" \
             --cpu 1 \
             --memory 2 \
             --ports 8000 \
             --ip-address Public \
             --location southeastasia \
             --os-type Linux \
+            --secure-environment-variables \
+              "DATABASE_URL=$DB_URL" \
+              "OPENAI_API_KEY=$OAI_KEY" \
             --environment-variables \
-              DATABASE_URL=${{ secrets.DATABASE_URL }} \
-              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-              OPENAI_MODEL=${{ secrets.OPENAI_MODEL }} \
+              "OPENAI_MODEL=$OAI_MODEL" \
             --restart-policy OnFailure \
             --dns-name-label scraper-app
