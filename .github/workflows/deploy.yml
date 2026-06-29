@@ -1,0 +1,61 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to ACI
+        run: |
+          az container create \
+            --resource-group scraper-rg \
+            --name scraper \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            --cpu 1 \
+            --memory 2 \
+            --ports 8000 \
+            --ip-address Public \
+            --location southeastasia \
+            --os-type Linux \
+            --environment-variables \
+              DATABASE_URL=${{ secrets.DATABASE_URL }} \
+              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+              OPENAI_MODEL=${{ secrets.OPENAI_MODEL }} \
+            --restart-policy OnFailure \
+            --dns-name-label scraper-app
