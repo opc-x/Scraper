@@ -59,31 +59,32 @@
   .modal-close:hover { color: #e5e5e5; }
   .modal-body { padding: 20px 24px 24px; }
 
-  /* Channel config cards */
-  .ch-card { background: #0a0a0a; border: 1px solid #262626; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
-  .ch-card:last-child { margin-bottom: 0; }
-  .ch-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; user-select: none; }
-  .ch-header:hover { background: #111; }
-  .ch-left { display: flex; align-items: center; gap: 10px; }
-  .ch-name { font-size: 15px; font-weight: 600; }
-  .ch-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  /* Step 1: Channel picker */
+  .ch-pick { background: #0a0a0a; border: 1px solid #262626; border-radius: 10px; padding: 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; display: flex; justify-content: space-between; align-items: center; }
+  .ch-pick:hover { border-color: #404040; }
+  .ch-pick:last-child { margin-bottom: 0; }
+  .ch-pick-left { display: flex; align-items: center; gap: 12px; }
+  .ch-pick-name { font-size: 15px; font-weight: 600; }
+  .ch-pick-desc { font-size: 12px; color: #737373; margin-top: 2px; }
+  .ch-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
   .ch-status.active { background: #052e16; color: #22c55e; }
   .ch-status.missing_config { background: #422006; color: #f59e0b; }
   .ch-status.disabled { background: #1a1a1a; color: #737373; }
-  .ch-arrow { color: #525252; transition: transform 0.2s; font-size: 12px; }
-  .ch-card.open .ch-arrow { transform: rotate(90deg); }
-  .ch-body { display: none; padding: 0 16px 16px; }
-  .ch-card.open .ch-body { display: block; }
-  .ch-desc { color: #737373; font-size: 12px; margin-bottom: 14px; }
-  .ch-field { margin-bottom: 12px; }
-  .ch-field:last-of-type { margin-bottom: 14px; }
+  .ch-pick-arrow { color: #525252; font-size: 14px; }
+
+  /* Step 2: Channel detail */
+  .ch-back { background: none; border: none; color: #737373; font-size: 13px; cursor: pointer; padding: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
+  .ch-back:hover { color: #e5e5e5; }
+  .ch-detail-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .ch-detail-desc { font-size: 12px; color: #737373; margin-bottom: 18px; }
+  .ch-field { margin-bottom: 14px; }
   .ch-field label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #999; margin-bottom: 4px; }
   .ch-field label .req { color: #ef4444; }
   .ch-field textarea { width: 100%; min-height: 56px; resize: vertical; font-size: 12px; line-height: 1.5; }
   .ch-field input[type="text"], .ch-field input[type="password"] { width: 100%; font-size: 13px; }
   .ch-field select { width: 100%; font-size: 13px; }
   .ch-help { font-size: 11px; color: #525252; margin-top: 4px; line-height: 1.4; }
-  .ch-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 4px; border-top: 1px solid #1a1a1a; }
+  .ch-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; margin-top: 14px; border-top: 1px solid #262626; }
   .toggle { position: relative; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #999; }
   .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
   .toggle .slider { position: relative; width: 36px; height: 20px; background: #333; border-radius: 10px; transition: 0.2s; }
@@ -91,39 +92,36 @@
   .toggle input:checked + .slider { background: #22c55e; }
   .toggle input:checked + .slider::before { transform: translateX(16px); background: #fff; }
   .ch-actions { display: flex; align-items: center; gap: 8px; }
-  .btn-save { background: #22c55e; color: #0a0a0a; border: none; border-radius: 6px; padding: 6px 18px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-save { background: #22c55e; color: #0a0a0a; border: none; border-radius: 6px; padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
   .btn-save:hover { opacity: 0.85; }
   .ch-toast { font-size: 12px; }
   .ch-toast.ok { color: #22c55e; }
   .ch-toast.err { color: #ef4444; }
 
-  /* Telegram auth */
-  .tg-auth { background: #111; border: 1px solid #262626; border-radius: 8px; padding: 14px; margin-top: 12px; margin-bottom: 4px; }
-  .tg-auth-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .tg-auth-status { font-size: 12px; margin-bottom: 10px; }
-  .tg-auth-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .tg-auth-row input { font-size: 13px; flex: 1; }
-  .btn-tg { background: #0088cc; color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-  .btn-tg:hover { opacity: 0.85; }
-  .btn-tg:disabled { opacity: 0.4; cursor: not-allowed; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
-  .dot.green { background: #22c55e; }
-  .dot.yellow { background: #f59e0b; }
-  .dot.red { background: #ef4444; }
-
-  /* Account management */
+  /* Telegram account management */
+  .tg-section { background: #111; border: 1px solid #262626; border-radius: 8px; padding: 14px; margin-top: 16px; margin-bottom: 4px; }
+  .tg-section-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
   .acct-list { margin-bottom: 12px; }
-  .acct-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #111; border: 1px solid #262626; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+  .acct-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #0a0a0a; border: 1px solid #262626; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
   .acct-info { display: flex; align-items: center; gap: 8px; }
   .acct-label { font-weight: 600; color: #e5e5e5; }
   .acct-phone { color: #737373; }
   .acct-btns { display: flex; gap: 4px; }
   .acct-btns button { padding: 3px 8px; font-size: 11px; border-radius: 4px; }
+  .btn-tg { background: #0088cc; color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-tg:hover { opacity: 0.85; }
+  .btn-tg:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-danger { background: #7f1d1d; color: #fca5a5; border: none; cursor: pointer; }
   .btn-danger:hover { background: #991b1b; }
   .acct-add { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
   .acct-add input { font-size: 12px; padding: 6px 10px; flex: 1; min-width: 80px; }
   .acct-add button { padding: 6px 12px; font-size: 12px; }
+  .tg-auth-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .tg-auth-row input { font-size: 13px; flex: 1; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .dot.green { background: #22c55e; }
+  .dot.yellow { background: #f59e0b; }
+  .dot.red { background: #ef4444; }
 </style>
 </head>
 <body>
@@ -141,18 +139,10 @@
       <input id="keyword" type="text" placeholder="关键词：前端、Python、产品经理..." autofocus>
       <select id="city">
         <option value="">全国</option>
-        <option value="深圳">深圳</option>
-        <option value="北京">北京</option>
-        <option value="上海">上海</option>
-        <option value="广州">广州</option>
-        <option value="杭州">杭州</option>
-        <option value="成都">成都</option>
-        <option value="南京">南京</option>
-        <option value="武汉">武汉</option>
-        <option value="西安">西安</option>
-        <option value="长沙">长沙</option>
-        <option value="重庆">重庆</option>
-        <option value="苏州">苏州</option>
+        <option value="深圳">深圳</option><option value="北京">北京</option><option value="上海">上海</option>
+        <option value="广州">广州</option><option value="杭州">杭州</option><option value="成都">成都</option>
+        <option value="南京">南京</option><option value="武汉">武汉</option><option value="西安">西安</option>
+        <option value="长沙">长沙</option><option value="重庆">重庆</option><option value="苏州">苏州</option>
         <option value="厦门">厦门</option>
       </select>
       <select id="channel"></select>
@@ -164,18 +154,9 @@
   </div>
 
   <div class="stats">
-    <div class="stat">
-      <div class="stat-label">命中职位</div>
-      <div class="stat-value green" id="total">—</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">当前渠道</div>
-      <div class="stat-value" id="ch">—</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">耗时</div>
-      <div class="stat-value" id="elapsed">—</div>
-    </div>
+    <div class="stat"><div class="stat-label">命中职位</div><div class="stat-value green" id="total">—</div></div>
+    <div class="stat"><div class="stat-label">当前渠道</div><div class="stat-value" id="ch">—</div></div>
+    <div class="stat"><div class="stat-label">耗时</div><div class="stat-value" id="elapsed">—</div></div>
   </div>
 
   <div id="results" class="job-list">
@@ -187,17 +168,16 @@
 <div class="modal-overlay" id="configModal">
   <div class="modal">
     <div class="modal-header">
-      <h2>⚙️ 渠道配置</h2>
+      <h2 id="configTitle">⚙️ 渠道配置</h2>
       <button class="modal-close" onclick="closeConfig()">✕</button>
     </div>
-    <div class="modal-body" id="configBody">
-      <div class="loading">加载中...</div>
-    </div>
+    <div class="modal-body" id="configBody"></div>
   </div>
 </div>
 
 <script>
 const STATUS_LABEL = { active: '已就绪', missing_config: '待配置', disabled: '未启用' };
+let _schema = null, _configs = null;
 
 // ── 初始化渠道下拉 ────────────────────────────
 async function loadChannels() {
@@ -210,20 +190,12 @@ async function loadChannels() {
       const opt = document.createElement('option');
       opt.value = ch.id;
       opt.textContent = ch.name;
-      if (ch.status !== 'active') {
-        opt.disabled = true;
-        opt.textContent += ` (${STATUS_LABEL[ch.status] || ch.status})`;
-      }
+      if (ch.status !== 'active') { opt.disabled = true; opt.textContent += ` (${STATUS_LABEL[ch.status] || ch.status})`; }
       sel.appendChild(opt);
     });
     const active = data.channels.find(c => c.status === 'active');
-    if (active) {
-      sel.value = active.id;
-      document.getElementById('ch').textContent = active.name;
-    }
-  } catch (e) {
-    console.error('Failed to load channels:', e);
-  }
+    if (active) { sel.value = active.id; document.getElementById('ch').textContent = active.name; }
+  } catch (e) { console.error('Failed to load channels:', e); }
 }
 loadChannels();
 
@@ -236,12 +208,7 @@ async function doSearch() {
   document.getElementById('results').innerHTML = '<div class="loading">正在狙击目标...</div>';
   const channel = document.getElementById('channel').value;
   document.getElementById('ch').textContent = document.getElementById('channel').selectedOptions[0]?.textContent?.replace(/ \(.*\)/, '') || channel;
-  const body = {
-    keyword,
-    city: document.getElementById('city').value,
-    channel,
-    salary_min: parseInt(document.getElementById('salary_min').value) || null,
-  };
+  const body = { keyword, city: document.getElementById('city').value, channel, salary_min: parseInt(document.getElementById('salary_min').value) || null };
   if (body.salary_min) body.salary_min *= 1000;
   const t0 = Date.now();
   try {
@@ -251,32 +218,17 @@ async function doSearch() {
     const ms = Date.now() - t0;
     document.getElementById('total').textContent = data.total;
     document.getElementById('elapsed').textContent = (ms / 1000).toFixed(1) + 's';
-    if (!data.jobs.length) {
-      document.getElementById('results').innerHTML = '<div class="empty">没有命中，换个关键词试试</div>';
-      return;
-    }
+    if (!data.jobs.length) { document.getElementById('results').innerHTML = '<div class="empty">没有命中，换个关键词试试</div>'; return; }
     document.getElementById('results').innerHTML = data.jobs.map(j => `
       <div class="job-card">
-        <div class="job-header">
-          <span class="job-title">${esc(j.title)}</span>
-          <span class="job-salary">${esc(j.salary)}</span>
-        </div>
+        <div class="job-header"><span class="job-title">${esc(j.title)}</span><span class="job-salary">${esc(j.salary)}</span></div>
         <div class="job-company">${esc(j.company)} · ${esc(j.city)} · ${esc(j.experience)}</div>
-        <div class="job-meta">
-          ${(j.skills||[]).map(s => `<span class="tag skill">${esc(s)}</span>`).join('')}
-          ${j.education ? `<span class="tag">${esc(j.education)}</span>` : ''}
-        </div>
-        <div class="job-actions">
-          ${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-outline">查看原文</button></a>` : ''}
-          <button class="btn-sm" onclick="saveJob(this, ${esc(JSON.stringify(JSON.stringify(j)))})">⭐ 收藏</button>
-        </div>
+        <div class="job-meta">${(j.skills||[]).map(s => `<span class="tag skill">${esc(s)}</span>`).join('')}${j.education ? `<span class="tag">${esc(j.education)}</span>` : ''}</div>
+        <div class="job-actions">${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-outline">查看原文</button></a>` : ''}<button class="btn-sm" onclick="saveJob(this, ${esc(JSON.stringify(JSON.stringify(j)))})">⭐ 收藏</button></div>
       </div>
     `).join('');
-  } catch (e) {
-    document.getElementById('results').innerHTML = `<div class="empty">请求失败: ${esc(e.message)}</div>`;
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (e) { document.getElementById('results').innerHTML = `<div class="empty">请求失败: ${esc(e.message)}</div>`; }
+  finally { btn.disabled = false; }
 }
 
 async function saveJob(el, jobJson) {
@@ -287,82 +239,13 @@ async function saveJob(el, jobJson) {
   } catch { el.textContent = '❌ 失败'; }
 }
 
-// ── 配置弹窗（动态渲染） ────────────────────────────
+// ══════════════════════════════════════════════════
+// 配置弹窗 — 两段式：选渠道 → 渠道详情
+// ══════════════════════════════════════════════════
+
 async function openConfig() {
   document.getElementById('configModal').classList.add('show');
-  const body = document.getElementById('configBody');
-  body.innerHTML = '<div class="loading">加载中...</div>';
-  try {
-    const [schemaRes, cfgRes] = await Promise.all([
-      fetch('/api/channels/schema').then(r => r.json()),
-      fetch('/api/channels/config').then(r => r.json()),
-    ]);
-    const schema = schemaRes.schema;
-    const configs = cfgRes.channels;
-
-    body.innerHTML = Object.entries(schema).map(([chId, chSchema]) => {
-      const cfg = configs[chId] || {};
-      const enabled = cfg.enabled ?? false;
-      const requiredFields = chSchema.fields.filter(f => f.required);
-      const allFilled = requiredFields.every(f => !!cfg[f.key]);
-      let status = 'disabled';
-      if (enabled && allFilled) status = 'active';
-      else if (enabled) status = 'missing_config';
-
-      return `
-        <div class="ch-card" id="ch-${chId}">
-          <div class="ch-header" onclick="toggleCard('${chId}')">
-            <div class="ch-left">
-              <span class="ch-name">${esc(chSchema.name)}</span>
-              <span class="ch-status ${status}">${STATUS_LABEL[status]}</span>
-            </div>
-            <span class="ch-arrow">▶</span>
-          </div>
-          <div class="ch-body">
-            <div class="ch-desc">${esc(chSchema.description)}</div>
-            ${chSchema.fields.map(f => renderField(chId, f, cfg[f.key] || f.default || '')).join('')}
-            ${chId === 'telegram' ? '<div class="tg-auth" id="tg-auth-box"><div class="tg-auth-title">📱 Telegram 账号管理</div><div class="acct-list" id="tg-acct-list"><div style="color:#525252">加载中...</div></div><div class="acct-add"><input type="text" id="tg-new-label" placeholder="备注名"><input type="text" id="tg-new-phone" placeholder="+66..."><input type="text" id="tg-new-api-id" placeholder="API ID"><input type="password" id="tg-new-api-hash" placeholder="API Hash"><button class="btn-tg" onclick="tgAddAccount()">添加账号</button></div><div class="ch-toast" id="tg-auth-toast"></div></div>' : ''}
-            <div class="ch-footer">
-              <label class="toggle">
-                <input type="checkbox" id="enabled-${chId}" ${enabled ? 'checked' : ''}>
-                <span class="slider"></span>
-                启用
-              </label>
-              <div class="ch-actions">
-                <span class="ch-toast" id="toast-${chId}"></span>
-                <button class="btn-save" onclick="saveChannel('${chId}')">保存</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch (e) {
-    body.innerHTML = `<div class="empty">加载失败: ${esc(e.message)}</div>`;
-  }
-}
-
-function renderField(chId, field, value) {
-  const id = `field-${chId}-${field.key}`;
-  const req = field.required ? '<span class="req">*</span>' : '';
-  let input = '';
-  if (field.type === 'textarea') {
-    input = `<textarea id="${id}" placeholder="${esc(field.placeholder || '')}">${esc(value)}</textarea>`;
-  } else if (field.type === 'select') {
-    input = `<select id="${id}">${(field.options||[]).map(o =>
-      `<option value="${esc(o)}" ${o === value ? 'selected' : ''}>${esc(o)}</option>`
-    ).join('')}</select>`;
-  } else if (field.type === 'password') {
-    input = `<input type="password" id="${id}" value="${esc(value)}" placeholder="${esc(field.placeholder || '')}">`;
-  } else {
-    input = `<input type="text" id="${id}" value="${esc(value)}" placeholder="${esc(field.placeholder || '')}">`;
-  }
-  const help = field.help ? `<div class="ch-help">${esc(field.help)}</div>` : '';
-  return `<div class="ch-field"><label>${esc(field.label)} ${req}</label>${input}${help}</div>`;
-}
-
-function toggleCard(chId) {
-  document.getElementById(`ch-${chId}`).classList.toggle('open');
+  showChannelPicker();
 }
 
 function closeConfig() {
@@ -370,52 +253,122 @@ function closeConfig() {
   loadChannels();
 }
 
-async function saveChannel(chId) {
-  const toast = document.getElementById(`toast-${chId}`);
-  toast.textContent = '';
-
-  // 从 schema 读字段 key
-  const body = { channel: chId, enabled: document.getElementById(`enabled-${chId}`).checked };
-  document.querySelectorAll(`[id^="field-${chId}-"]`).forEach(el => {
-    const key = el.id.replace(`field-${chId}-`, '');
-    body[key] = el.value.trim();
-  });
+// ── Step 1: 渠道选择列表 ────────────────────────────
+async function showChannelPicker() {
+  const body = document.getElementById('configBody');
+  document.getElementById('configTitle').textContent = '⚙️ 选择渠道';
+  body.innerHTML = '<div class="loading">加载中...</div>';
 
   try {
-    const res = await fetch('/api/channels/config', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
-      toast.className = 'ch-toast ok';
-      toast.textContent = '✅ 已保存';
-      // 更新状态标签
-      const card = document.getElementById(`ch-${chId}`);
-      const statusEl = card.querySelector('.ch-status');
-      const requiredEls = card.querySelectorAll('[id^="field-"][required], textarea[id^="field-"]');
-      // 简单判断
-      if (body.enabled) {
-        statusEl.className = 'ch-status active';
-        statusEl.textContent = '已就绪';
-      } else {
-        statusEl.className = 'ch-status disabled';
-        statusEl.textContent = '未启用';
-      }
-    } else {
-      const d = await res.json();
-      toast.className = 'ch-toast err';
-      toast.textContent = '❌ ' + (d.detail || '保存失败');
-    }
+    const [schemaRes, cfgRes] = await Promise.all([
+      fetch('/api/channels/schema').then(r => r.json()),
+      fetch('/api/channels/config').then(r => r.json()),
+    ]);
+    _schema = schemaRes.schema;
+    _configs = cfgRes.channels;
+
+    body.innerHTML = Object.entries(_schema).map(([chId, s]) => {
+      const cfg = _configs[chId] || {};
+      const enabled = cfg.enabled ?? false;
+      const required = s.fields.filter(f => f.required);
+      const filled = required.every(f => !!cfg[f.key]);
+      let status = 'disabled';
+      if (enabled && filled) status = 'active';
+      else if (enabled) status = 'missing_config';
+
+      return `
+        <div class="ch-pick" onclick="showChannelDetail('${chId}')">
+          <div class="ch-pick-left">
+            <div>
+              <div class="ch-pick-name">${esc(s.name)}</div>
+              <div class="ch-pick-desc">${esc(s.description)}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="ch-status ${status}">${STATUS_LABEL[status]}</span>
+            <span class="ch-pick-arrow">▶</span>
+          </div>
+        </div>`;
+    }).join('');
   } catch (e) {
-    toast.className = 'ch-toast err';
-    toast.textContent = '❌ ' + e.message;
+    body.innerHTML = `<div class="empty">加载失败: ${esc(e.message)}</div>`;
   }
 }
 
-document.getElementById('configModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfig(); });
-function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
-document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+// ── Step 2: 渠道详情配置 ────────────────────────────
+async function showChannelDetail(chId) {
+  const body = document.getElementById('configBody');
+  const s = _schema[chId];
+  const cfg = _configs[chId] || {};
+  const enabled = cfg.enabled ?? false;
+
+  document.getElementById('configTitle').textContent = `⚙️ ${s.name}`;
+
+  let html = `<button class="ch-back" onclick="showChannelPicker()">← 返回渠道列表</button>`;
+  html += `<div class="ch-detail-desc">${esc(s.description)}</div>`;
+
+  // 配置字段
+  html += s.fields.map(f => renderField(chId, f, cfg[f.key] || f.default || '')).join('');
+
+  // Telegram 专属：账号管理
+  if (chId === 'telegram') {
+    html += `<div class="tg-section">
+      <div class="tg-section-title">📱 账号管理</div>
+      <div class="acct-list" id="tg-acct-list"><div style="color:#525252">加载中...</div></div>
+      <div class="acct-add">
+        <input type="text" id="tg-new-label" placeholder="备注名">
+        <input type="text" id="tg-new-phone" placeholder="+66...">
+        <input type="text" id="tg-new-api-id" placeholder="API ID">
+        <input type="password" id="tg-new-api-hash" placeholder="API Hash">
+        <button class="btn-tg" onclick="tgAddAccount()">添加账号</button>
+      </div>
+      <div class="ch-toast" id="tg-auth-toast"></div>
+    </div>`;
+  }
+
+  // 底部：启用开关 + 保存
+  html += `<div class="ch-footer">
+    <label class="toggle">
+      <input type="checkbox" id="enabled-${chId}" ${enabled ? 'checked' : ''}>
+      <span class="slider"></span>
+      启用
+    </label>
+    <div class="ch-actions">
+      <span class="ch-toast" id="toast-${chId}"></span>
+      <button class="btn-save" onclick="saveChannel('${chId}')">保存</button>
+    </div>
+  </div>`;
+
+  body.innerHTML = html;
+
+  if (chId === 'telegram') setTimeout(loadTgAccounts, 100);
+}
+
+function renderField(chId, field, value) {
+  const id = `field-${chId}-${field.key}`;
+  const req = field.required ? '<span class="req">*</span>' : '';
+  let input = '';
+  if (field.type === 'textarea') input = `<textarea id="${id}" placeholder="${esc(field.placeholder || '')}">${esc(value)}</textarea>`;
+  else if (field.type === 'select') input = `<select id="${id}">${(field.options||[]).map(o => `<option value="${esc(o)}" ${o === value ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  else if (field.type === 'password') input = `<input type="password" id="${id}" value="${esc(value)}" placeholder="${esc(field.placeholder || '')}">`;
+  else input = `<input type="text" id="${id}" value="${esc(value)}" placeholder="${esc(field.placeholder || '')}">`;
+  const help = field.help ? `<div class="ch-help">${esc(field.help)}</div>` : '';
+  return `<div class="ch-field"><label>${esc(field.label)} ${req}</label>${input}${help}</div>`;
+}
+
+async function saveChannel(chId) {
+  const toast = document.getElementById(`toast-${chId}`);
+  toast.textContent = '';
+  const payload = { channel: chId, enabled: document.getElementById(`enabled-${chId}`).checked };
+  document.querySelectorAll(`[id^="field-${chId}-"]`).forEach(el => {
+    payload[el.id.replace(`field-${chId}-`, '')] = el.value.trim();
+  });
+  try {
+    const res = await fetch('/api/channels/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (res.ok) { toast.className = 'ch-toast ok'; toast.textContent = '✅ 已保存'; }
+    else { const d = await res.json(); toast.className = 'ch-toast err'; toast.textContent = '❌ ' + (d.detail || '保存失败'); }
+  } catch (e) { toast.className = 'ch-toast err'; toast.textContent = '❌ ' + e.message; }
+}
 
 // ── Telegram 多账号管理 ────────────────────────────
 async function loadTgAccounts() {
@@ -424,10 +377,7 @@ async function loadTgAccounts() {
   try {
     const res = await fetch('/api/telegram/accounts');
     const data = await res.json();
-    if (!data.accounts.length) {
-      list.innerHTML = '<div style="color:#525252;font-size:12px">还没有账号，在下方添加</div>';
-      return;
-    }
+    if (!data.accounts.length) { list.innerHTML = '<div style="color:#525252;font-size:12px">还没有账号，在下方添加</div>'; return; }
     list.innerHTML = data.accounts.map(a => `
       <div class="acct-item" id="acct-${a.id}">
         <div class="acct-info">
@@ -442,9 +392,7 @@ async function loadTgAccounts() {
         </div>
       </div>
       <div id="login-row-${a.id}" style="display:none;margin-bottom:6px">
-        <div class="tg-auth-row">
-          <button class="btn-tg" onclick="tgSendCode(${a.id})">发送验证码</button>
-        </div>
+        <div class="tg-auth-row"><button class="btn-tg" onclick="tgSendCode(${a.id})">发送验证码</button></div>
         <div class="tg-auth-row" id="code-row-${a.id}" style="display:none">
           <input type="text" id="code-${a.id}" placeholder="输入验证码">
           <input type="password" id="2fa-${a.id}" placeholder="两步验证密码（如有）" style="display:none">
@@ -453,9 +401,7 @@ async function loadTgAccounts() {
         <div class="ch-toast" id="login-toast-${a.id}"></div>
       </div>
     `).join('');
-  } catch (e) {
-    list.innerHTML = `<div style="color:#ef4444;font-size:12px">加载失败: ${esc(e.message)}</div>`;
-  }
+  } catch (e) { list.innerHTML = `<div style="color:#ef4444;font-size:12px">加载失败: ${esc(e.message)}</div>`; }
 }
 
 async function tgAddAccount() {
@@ -466,47 +412,22 @@ async function tgAddAccount() {
   const toast = document.getElementById('tg-auth-toast');
   if (!label || !phone || !api_id || !api_hash) { toast.className='ch-toast err'; toast.textContent='请填完所有字段'; return; }
   try {
-    const res = await fetch('/api/telegram/accounts', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({label, phone, api_id, api_hash}),
-    });
+    const res = await fetch('/api/telegram/accounts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label, phone, api_id, api_hash}) });
     const data = await res.json();
-    if (data.ok) {
-      toast.className='ch-toast ok'; toast.textContent=`✅ ${data.message}`;
-      document.getElementById('tg-new-label').value='';
-      document.getElementById('tg-new-phone').value='';
-      document.getElementById('tg-new-api-id').value='';
-      document.getElementById('tg-new-api-hash').value='';
-      loadTgAccounts();
-    } else {
-      toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'添加失败');
-    }
+    if (data.ok) { toast.className='ch-toast ok'; toast.textContent=`✅ ${data.message}`; ['tg-new-label','tg-new-phone','tg-new-api-id','tg-new-api-hash'].forEach(id => document.getElementById(id).value=''); loadTgAccounts(); }
+    else { toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'添加失败'); }
   } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
 }
 
-async function tgDeleteAcct(id) {
-  if (!confirm('确定删除这个账号？')) return;
-  await fetch(`/api/telegram/accounts/${id}`, {method:'DELETE'});
-  loadTgAccounts();
-}
-
-function tgLogin(id) {
-  const row = document.getElementById(`login-row-${id}`);
-  row.style.display = row.style.display === 'none' ? 'block' : 'none';
-}
+async function tgDeleteAcct(id) { if (!confirm('确定删除？')) return; await fetch(`/api/telegram/accounts/${id}`, {method:'DELETE'}); loadTgAccounts(); }
+function tgLogin(id) { const r = document.getElementById(`login-row-${id}`); r.style.display = r.style.display === 'none' ? 'block' : 'none'; }
 
 async function tgSendCode(id) {
-  const toast = document.getElementById(`login-toast-${id}`);
-  toast.textContent = '发送中...'; toast.className = 'ch-toast';
+  const toast = document.getElementById(`login-toast-${id}`); toast.textContent = '发送中...';
   try {
-    const res = await fetch(`/api/telegram/accounts/${id}/send-code`, {method:'POST'});
-    const data = await res.json();
-    if (data.ok) {
-      toast.className='ch-toast ok'; toast.textContent=data.message;
-      document.getElementById(`code-row-${id}`).style.display='flex';
-    } else {
-      toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'发送失败');
-    }
+    const res = await fetch(`/api/telegram/accounts/${id}/send-code`, {method:'POST'}); const data = await res.json();
+    if (data.ok) { toast.className='ch-toast ok'; toast.textContent=data.message; document.getElementById(`code-row-${id}`).style.display='flex'; }
+    else { toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'发送失败'); }
   } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
 }
 
@@ -516,28 +437,17 @@ async function tgVerify(id) {
   const toast = document.getElementById(`login-toast-${id}`);
   if (!code) { toast.className='ch-toast err'; toast.textContent='请输入验证码'; return; }
   try {
-    const res = await fetch(`/api/telegram/accounts/${id}/verify-code`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({code, password}),
-    });
+    const res = await fetch(`/api/telegram/accounts/${id}/verify-code`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({code, password}) });
     const data = await res.json();
-    if (data.ok) {
-      toast.className='ch-toast ok'; toast.textContent='✅ '+data.message;
-      loadTgAccounts();
-    } else if (data.need_2fa) {
-      document.getElementById(`2fa-${id}`).style.display='block';
-      toast.className='ch-toast err'; toast.textContent='需要输入两步验证密码';
-    } else {
-      toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'验证失败');
-    }
+    if (data.ok) { toast.className='ch-toast ok'; toast.textContent='✅ '+data.message; loadTgAccounts(); }
+    else if (data.need_2fa) { document.getElementById(`2fa-${id}`).style.display='block'; toast.className='ch-toast err'; toast.textContent='需要输入两步验证密码'; }
+    else { toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'验证失败'); }
   } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
 }
 
-const _origOpenConfig = openConfig;
-openConfig = async function() {
-  await _origOpenConfig();
-  setTimeout(loadTgAccounts, 300);
-};
+document.getElementById('configModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfig(); });
+function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 </script>
 </body>
 </html>
