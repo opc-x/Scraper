@@ -67,3 +67,13 @@ jobs:
               "OPENAI_MODEL=$OAI_MODEL" \
             --restart-policy OnFailure \
             --dns-name-label scraper-app
+
+      - name: Update Cloudflare DNS
+        run: |
+          NEW_IP=$(az container show --resource-group scraper-rg --name scraper --query "ipAddress.ip" --output tsv)
+          RECORD_ID=$(curl -s "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/dns_records?name=scraper.opc-x.org" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'][0]['id'])")
+          curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/dns_records/${RECORD_ID}" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data "{\"type\":\"A\",\"name\":\"scraper\",\"content\":\"${NEW_IP}\",\"ttl\":1,\"proxied\":false}"
