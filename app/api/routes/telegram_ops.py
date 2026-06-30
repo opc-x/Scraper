@@ -255,12 +255,53 @@ async def get_messages(
     kwargs = {"limit": limit}
     if q:
         kwargs["search"] = q
+
+    _sender_cache: dict[int, dict] = {}
+
+    async def _get_sender(msg) -> dict:
+        sid = msg.sender_id
+        if sid is None:
+            return {}
+        if sid in _sender_cache:
+            return _sender_cache[sid]
+        try:
+            sender = await msg.get_sender()
+            if sender is None:
+                info = {}
+            elif hasattr(sender, "first_name"):
+                name = " ".join(filter(None, [sender.first_name, sender.last_name]))
+                info = {"id": sender.id, "name": name, "username": sender.username, "type": "user"}
+            else:
+                info = {"id": sender.id, "name": getattr(sender, "title", ""), "username": getattr(sender, "username", None), "type": "channel"}
+            _sender_cache[sid] = info
+            return info
+        except Exception:
+            return {"id": sid}
+
     messages = []
     async for msg in client.iter_messages(entity, **kwargs):
+        sender = await _get_sender(msg)
+        # 媒体类型描述
+        media_type = None
+        if msg.photo:
+            media_type = "📷 图片"
+        elif msg.video:
+            media_type = "🎥 视频"
+        elif msg.sticker:
+            media_type = "🎭 贴纸"
+        elif msg.document:
+            media_type = "📄 文件"
+        elif msg.audio:
+            media_type = "🎵 音频"
+        elif not msg.text and not msg.text:
+            media_type = "📎 媒体"
+
         messages.append({
-            "id": msg.id, "text": msg.text or "", "date": _serialize_date(msg.date),
-            "sender_id": msg.sender_id,
-            "reply_to": msg.reply_to_msg_id if msg.reply_to else None,
+            "id": msg.id,
+            "text": msg.text or "",
+            "media_type": media_type,
+            "date": _serialize_date(msg.date),
+            "sender": sender,
         })
     return {"target": target, "messages": messages, "total": len(messages)}
 

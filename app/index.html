@@ -216,8 +216,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
 .chat-filter input { flex: 1; font-size: 13px; }
 .btn-filter { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 10px; padding: 10px 14px; font-size: 13px; cursor: pointer; white-space: nowrap; }
 .btn-ai { background: var(--green); color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-.msg-item { padding: 10px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; font-size: 13px; line-height: 1.6; color: var(--text); }
-.msg-item.dimmed { color: var(--text3); border-color: transparent; background: transparent; padding: 4px 12px; font-size: 12px; }
+.msg-item { padding: 10px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; color: var(--text); }
+.msg-item.media-only { color: var(--text3); border-style: dashed; }
+.msg-sender { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; cursor: pointer; }
+.msg-sender:hover .sender-name { text-decoration: underline; }
+.sender-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sender-name { font-size: 12px; font-weight: 600; color: var(--green); }
+.sender-at { font-size: 11px; color: var(--text3); }
+.msg-text { font-size: 13px; line-height: 1.6; }
+.msg-media { font-size: 12px; color: var(--text3); }
 
 /* ── Modal for config ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
@@ -713,7 +720,36 @@ function renderMsgs(msgs) {
   const el = document.getElementById('chat-msgs');
   if (!msgs.length) { el.innerHTML = '<div class="empty">暂无消息</div>'; return; }
   el.innerHTML = `<div style="font-size:12px;color:var(--text3);margin-bottom:8px">${msgs.length} 条消息</div>`
-    + msgs.map(m => `<div class="msg-item">${esc(m.text)}</div>`).join('');
+    + msgs.map(m => msgItem(m)).join('');
+}
+
+function msgItem(m) {
+  const s = m.sender || {};
+  const hasText = !!m.text;
+  const name = s.name || '';
+  const at = s.username ? '@' + s.username : (s.id ? '#' + s.id : '');
+  const initial = (name[0] || at[1] || '?').toUpperCase();
+
+  let senderHtml = '';
+  if (name || at) {
+    const senderTarget = s.username || (s.id ? String(s.id) : '');
+    const senderClick = senderTarget ? `onclick="openSenderProfile('${esc(senderTarget)}','${esc(name||at)}')"` : '';
+    senderHtml = `<div class="msg-sender" ${senderClick}>
+      <div class="sender-avatar">${initial}</div>
+      <span class="sender-name">${esc(name)}</span>
+      ${at ? `<span class="sender-at">${esc(at)}</span>` : ''}
+    </div>`;
+  }
+
+  const contentHtml = hasText
+    ? `<div class="msg-text">${esc(m.text)}</div>`
+    : `<div class="msg-media">${esc(m.media_type || '📎 媒体')}</div>`;
+
+  return `<div class="msg-item ${hasText?'':'media-only'}">${senderHtml}${contentHtml}</div>`;
+}
+
+function openSenderProfile(target, name) {
+  openChat(target, name);
 }
 
 function filterMsgs() {
