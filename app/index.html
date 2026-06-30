@@ -180,6 +180,39 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
 .chip { flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 13px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .chip.active { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
 
+/* ── Telegram ops ── */
+.tg-ops-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.tg-ops-acct { display: flex; align-items: center; gap: 8px; }
+.tg-ops-name { font-size: 16px; font-weight: 700; }
+.tg-ops-phone { font-size: 12px; color: var(--text3); }
+.btn-config-sm { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+.tg-search { display: flex; gap: 8px; margin-bottom: 14px; }
+.tg-search input { flex: 1; font-size: 14px; }
+.btn-search-go { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.ops-tabs { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.ops-tab { flex: 1; padding: 9px 0; text-align: center; font-size: 13px; color: var(--text2); cursor: pointer; border: none; background: var(--bg2); transition: all 0.15s; }
+.ops-tab.active { background: var(--green); color: #000; font-weight: 600; }
+.dialog-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: background 0.15s; }
+.dialog-item:active { background: var(--bg3); }
+.dialog-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; color: var(--text2); font-weight: 600; }
+.dialog-info { flex: 1; min-width: 0; }
+.dialog-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dialog-preview { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.dialog-meta { flex-shrink: 0; text-align: right; }
+.dialog-type { font-size: 10px; color: var(--text3); background: var(--bg3); padding: 2px 6px; border-radius: 4px; }
+.dialog-unread { background: var(--green); color: #000; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-top: 4px; display: inline-block; }
+.search-result-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; }
+.sr-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.sr-info { flex: 1; }
+.sr-name { font-size: 14px; font-weight: 600; }
+.sr-sub { font-size: 12px; color: var(--text3); }
+.btn-analyze { background: var(--green); color: #000; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.msg-filter { display: flex; gap: 8px; margin-bottom: 10px; }
+.msg-filter input { flex: 1; font-size: 13px; }
+.msg-item { padding: 10px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; font-size: 13px; line-height: 1.5; color: var(--text2); }
+.job-extracted { background: var(--green-dim); border-color: var(--green); }
+.job-extracted .job-badge { color: var(--green); font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+
 /* ── Modal for config ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
 .modal-overlay.show { display: block; }
@@ -425,6 +458,16 @@ async function showChannelPicker() {
 
 // ══ Channel config — Step 2: detail ══
 async function showChannelDetail(chId) {
+  // Telegram 已登录 → 直接进操作页
+  if (chId === 'telegram') {
+    const accts = await fetch('/api/telegram/accounts').then(r=>r.json()).catch(()=>({accounts:[]}));
+    const loggedIn = accts.accounts?.some(a => a.has_session && a.is_active);
+    if (loggedIn) { showTgOps(accts.accounts[0]); return; }
+  }
+  showChannelConfig(chId);
+}
+
+function showChannelConfig(chId) {
   const s = _schema[chId], cfg = _cfgs[chId] || {}, en = cfg.enabled ?? false;
   document.getElementById('config-title').textContent = s.name;
   let html = `<div class="detail-header"><button class="btn-back" onclick="showChannelPicker()">‹</button><div class="detail-title">${esc(s.name)}</div></div>`;
@@ -457,8 +500,16 @@ async function saveChannel(chId) {
   document.querySelectorAll(`[id^="f-${chId}-"]`).forEach(el => { payload[el.id.replace(`f-${chId}-`, '')] = el.value.trim(); });
   try {
     const res = await fetch('/api/channels/config', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    if (res.ok) { toast.className='toast ok'; toast.textContent='✅ 已保存'; loadChannels(); }
-    else { const d=await res.json(); toast.className='toast err'; toast.textContent='❌ '+(d.detail||'失败'); }
+    if (res.ok) {
+      toast.className='toast ok'; toast.textContent='✅ 已保存'; loadChannels();
+      if (chId === 'telegram') {
+        setTimeout(async () => {
+          const accts = await fetch('/api/telegram/accounts').then(r=>r.json()).catch(()=>({accounts:[]}));
+          const loggedIn = accts.accounts?.some(a => a.has_session && a.is_active);
+          if (loggedIn) showTgOps(accts.accounts.find(a=>a.has_session));
+        }, 600);
+      }
+    } else { const d=await res.json(); toast.className='toast err'; toast.textContent='❌ '+(d.detail||'失败'); }
   } catch(e) { toast.className='toast err'; toast.textContent='❌ '+e.message; }
 }
 
@@ -529,10 +580,178 @@ async function tgVerify(id){
   const code=v(`code-${id}`), pw=v(`2fa-${id}`), t=document.getElementById(`lt-${id}`);
   if(!code){t.className='toast err';t.textContent='请输入验证码';return;}
   try{const d=await fetch(`/api/telegram/accounts/${id}/verify-code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,password:pw})}).then(r=>r.json());
-    if(d.ok){t.className='toast ok';t.textContent='✅ 登录成功';loadTgAccounts();}
+    if(d.ok){t.className='toast ok';t.textContent='✅ 登录成功';setTimeout(async()=>{const accts=await fetch('/api/telegram/accounts').then(r=>r.json());const a=accts.accounts?.find(x=>x.has_session);if(a)showTgOps(a);},500);}
     else if(d.need_2fa){document.getElementById(`2fa-${id}`).style.display='block';t.className='toast err';t.textContent='需要两步验证密码';}
     else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
   }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
+}
+
+// ══ Telegram 操作页 ══
+let _tgAcct = null;
+let _opsTab = 'dialogs';
+
+function showTgOps(acct) {
+  _tgAcct = acct;
+  document.getElementById('config-title').textContent = 'Telegram';
+  _opsTab = 'dialogs';
+  renderTgOps();
+  loadDialogs();
+}
+
+function renderTgOps() {
+  const acct = _tgAcct;
+  document.getElementById('config-body').innerHTML = `
+    <div class="tg-ops-header">
+      <div class="tg-ops-acct">
+        <span class="dot g"></span>
+        <div><div class="tg-ops-name">${esc(acct.label)}</div><div class="tg-ops-phone">${esc(acct.phone)}</div></div>
+      </div>
+      <button class="btn-config-sm" onclick="showChannelConfig('telegram')">⚙ 配置</button>
+    </div>
+
+    <div class="tg-search">
+      <input id="tg-global-q" type="text" placeholder="全局搜索账号/群组..." inputmode="search">
+      <button class="btn-search-go" onclick="tgGlobalSearch()">搜</button>
+    </div>
+
+    <div class="ops-tabs">
+      <button class="ops-tab ${_opsTab==='dialogs'?'active':''}" onclick="switchOpsTab('dialogs')">💬 对话</button>
+      <button class="ops-tab ${_opsTab==='search'?'active':''}" onclick="switchOpsTab('search')">🔍 搜索结果</button>
+      <button class="ops-tab ${_opsTab==='analyze'?'active':''}" onclick="switchOpsTab('analyze')">🤖 分析</button>
+    </div>
+
+    <div id="ops-content"></div>
+  `;
+  document.getElementById('tg-global-q').addEventListener('keydown', e => { if(e.key==='Enter') tgGlobalSearch(); });
+}
+
+function switchOpsTab(tab) {
+  _opsTab = tab;
+  document.querySelectorAll('.ops-tab').forEach((el,i) => {
+    const tabs = ['dialogs','search','analyze'];
+    el.classList.toggle('active', tabs[i] === tab);
+  });
+}
+
+async function loadDialogs() {
+  switchOpsTab('dialogs');
+  const el = document.getElementById('ops-content');
+  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  try {
+    const d = await fetch(`/api/telegram/dialogs?limit=100&account_id=${_tgAcct.id}`).then(r=>r.json());
+    if (!d.dialogs?.length) { el.innerHTML = '<div class="empty">暂无对话</div>'; return; }
+    const icon = t => t==='channel'?'📢':t==='group'?'👥':'👤';
+    el.innerHTML = d.dialogs.map(dlg => `
+      <div class="dialog-item" onclick="analyzeTarget('${esc(dlg.username||String(dlg.id))}', '${esc(dlg.name)}')">
+        <div class="dialog-avatar">${icon(dlg.type)}</div>
+        <div class="dialog-info">
+          <div class="dialog-name">${esc(dlg.name)}</div>
+          <div class="dialog-preview">${esc(dlg.last_message||'')}</div>
+        </div>
+        <div class="dialog-meta">
+          <div class="dialog-type">${dlg.type==='channel'?'频道':dlg.type==='group'?'群组':'私聊'}</div>
+          ${dlg.unread_count>0?`<div class="dialog-unread">${dlg.unread_count}</div>`:''}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+async function tgGlobalSearch() {
+  const q = v('tg-global-q');
+  if (!q) return;
+  switchOpsTab('search');
+  const el = document.getElementById('ops-content');
+  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  try {
+    const d = await fetch(`/api/telegram/search/global?q=${encodeURIComponent(q)}&account_id=${_tgAcct.id}`).then(r=>r.json());
+    const users = (d.users||[]).map(u => `
+      <div class="search-result-item">
+        <div class="sr-avatar">${(u.first_name||'?')[0]}</div>
+        <div class="sr-info">
+          <div class="sr-name">${esc(u.first_name||'')} ${esc(u.last_name||'')}</div>
+          <div class="sr-sub">${u.username?'@'+esc(u.username):''} ${u.bot?'· Bot':''}</div>
+        </div>
+        ${u.username?`<button class="btn-analyze" onclick="analyzeTarget('${esc(u.username)}','${esc((u.first_name||'')+' '+(u.last_name||''))}')">分析</button>`:''}
+      </div>`);
+    const chats = (d.chats||[]).map(c => `
+      <div class="search-result-item">
+        <div class="sr-avatar" style="background:var(--bg3);color:var(--text2)">${c.type==='channel'?'📢':'👥'}</div>
+        <div class="sr-info">
+          <div class="sr-name">${esc(c.title)}</div>
+          <div class="sr-sub">${c.username?'@'+esc(c.username):''}${c.participants_count?' · '+c.participants_count+'人':''}</div>
+        </div>
+        ${c.username?`<button class="btn-analyze" onclick="analyzeTarget('${esc(c.username)}','${esc(c.title)}')">分析</button>`:''}
+      </div>`);
+    const all = [...users, ...chats];
+    el.innerHTML = all.length ? all.join('') : `<div class="empty">没有找到 "${esc(q)}"</div>`;
+  } catch(e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+async function analyzeTarget(target, name) {
+  switchOpsTab('analyze');
+  const el = document.getElementById('ops-content');
+  el.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px">📊 ${esc(name)}</div>
+      <div style="font-size:12px;color:var(--text3)">@${esc(target)}</div>
+    </div>
+    <div class="msg-filter">
+      <input type="text" id="msg-q" placeholder="过滤关键词（可选）">
+      <button class="btn-analyze" onclick="loadAndAnalyze('${esc(target)}','${esc(name)}')">加载消息</button>
+    </div>
+    <div id="msg-list"><div class="empty" style="padding:20px 0">点击「加载消息」开始</div></div>
+  `;
+}
+
+async function loadAndAnalyze(target, name) {
+  const q = v('msg-q');
+  const el = document.getElementById('msg-list');
+  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  try {
+    const url = `/api/telegram/messages?target=${encodeURIComponent(target)}&limit=50&account_id=${_tgAcct.id}${q?'&q='+encodeURIComponent(q):''}`;
+    const d = await fetch(url).then(r=>r.json());
+    if (!d.messages?.length) { el.innerHTML = '<div class="empty">没有消息</div>'; return; }
+
+    // 显示消息
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;color:var(--text3)">${d.total} 条消息</span>
+        <button class="btn-analyze" onclick="runLLMAnalysis('${esc(target)}','${esc(name)}')">🤖 AI 提取职位</button>
+      </div>
+      ${d.messages.map(m=>`<div class="msg-item">${esc(m.text)}</div>`).join('')}
+    `;
+  } catch(e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+async function runLLMAnalysis(target, name) {
+  const q = v('msg-q') || name;
+  const btn = document.querySelector('.ops-tab.active');
+  const el = document.getElementById('msg-list');
+  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  try {
+    // 用搜索接口触发 LLM 提取
+    const cfg = await fetch('/api/channels/config').then(r=>r.json());
+    // 临时设置 sources 为当前 target
+    await fetch('/api/channels/config', {method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({channel:'telegram', enabled:true,
+        sources: target,
+        llm_api_key: cfg.channels?.telegram?.llm_api_key || ''})});
+
+    const res = await fetch('/api/search', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({keyword: q, channel:'telegram'})}).then(r=>r.json());
+
+    if (!res.jobs?.length) {
+      el.innerHTML = '<div class="empty">未提取到职位信息（消息内容可能不是招聘相关）</div>';
+    } else {
+      el.innerHTML = `
+        <div style="font-size:13px;color:var(--green);margin-bottom:10px">✅ 提取到 ${res.jobs.length} 条职位</div>
+        ${res.jobs.map(j => jobCard(j)).join('')}
+      `;
+    }
+  } catch(e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
 // ══ Helpers ══
