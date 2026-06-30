@@ -2,184 +2,283 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scraper — 多渠道职位狙击</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scraper">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Scraper</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, 'SF Pro', 'Helvetica Neue', sans-serif; background: #0a0a0a; color: #e5e5e5; min-height: 100vh; }
-  .container { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
-  h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-  h1 span { color: #22c55e; }
-  .subtitle { color: #737373; font-size: 14px; }
-  .btn-config { background: #262626; color: #a3a3a3; border: 1px solid #333; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .btn-config:hover { border-color: #22c55e; color: #22c55e; }
-  .search-box { background: #171717; border: 1px solid #262626; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-  .row { display: flex; gap: 12px; margin-bottom: 12px; }
-  .row:last-child { margin-bottom: 0; }
-  input, select, textarea { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: #e5e5e5; font-size: 14px; flex: 1; outline: none; transition: border-color 0.2s; font-family: inherit; }
-  input:focus, select:focus, textarea:focus { border-color: #22c55e; }
-  select { cursor: pointer; }
-  button { background: #22c55e; color: #0a0a0a; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-  button:hover { opacity: 0.85; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .stats { display: flex; gap: 24px; margin-bottom: 24px; }
-  .stat { background: #171717; border: 1px solid #262626; border-radius: 10px; padding: 16px 20px; flex: 1; }
-  .stat-label { color: #737373; font-size: 12px; margin-bottom: 4px; }
-  .stat-value { font-size: 22px; font-weight: 700; }
-  .stat-value.green { color: #22c55e; }
-  .job-list { display: flex; flex-direction: column; gap: 12px; }
-  .job-card { background: #171717; border: 1px solid #262626; border-radius: 10px; padding: 18px 20px; transition: border-color 0.2s; }
-  .job-card:hover { border-color: #404040; }
-  .job-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .job-title { font-size: 16px; font-weight: 600; }
-  .job-salary { color: #22c55e; font-weight: 700; font-size: 15px; white-space: nowrap; margin-left: 12px; }
-  .job-company { color: #a3a3a3; font-size: 13px; margin-bottom: 8px; }
-  .job-meta { display: flex; gap: 8px; flex-wrap: wrap; }
-  .tag { background: #262626; color: #a3a3a3; padding: 3px 10px; border-radius: 4px; font-size: 12px; }
-  .tag.skill { border: 1px solid #333; color: #d4d4d4; }
-  .job-actions { display: flex; justify-content: flex-end; margin-top: 10px; gap: 8px; }
-  .btn-sm { font-size: 12px; padding: 5px 14px; border-radius: 6px; }
-  .btn-outline { background: transparent; border: 1px solid #333; color: #a3a3a3; }
-  .btn-outline:hover { border-color: #22c55e; color: #22c55e; }
-  .empty { text-align: center; color: #525252; padding: 60px 0; font-size: 14px; }
-  .loading { text-align: center; padding: 40px 0; color: #737373; }
-  .loading::after { content: ''; display: inline-block; width: 16px; height: 16px; border: 2px solid #333; border-top-color: #22c55e; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  a { color: #22c55e; text-decoration: none; }
-  a:hover { text-decoration: underline; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg3: #1c1c1c;
+  --border: #2a2a2a;
+  --text: #e5e5e5;
+  --text2: #888;
+  --text3: #555;
+  --green: #22c55e;
+  --green-dim: #052e16;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --blue: #0088cc;
+  --radius: 14px;
+  --nav-h: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, 'SF Pro', 'PingFang SC', sans-serif; }
 
-  /* Modal */
-  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
-  .modal-overlay.show { display: flex; }
-  .modal { background: #171717; border: 1px solid #333; border-radius: 14px; width: 560px; max-width: 92vw; max-height: 85vh; overflow-y: auto; }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; }
-  .modal-header h2 { font-size: 18px; font-weight: 700; }
-  .modal-close { background: none; border: none; color: #737373; font-size: 20px; cursor: pointer; padding: 4px 8px; }
-  .modal-close:hover { color: #e5e5e5; }
-  .modal-body { padding: 20px 24px 24px; }
+/* ── Layout ── */
+.screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+.screen.active { display: flex; }
+.screen-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(var(--nav-h) + var(--safe-bottom) + 16px); }
+.screen-body::-webkit-scrollbar { display: none; }
 
-  /* Step 1: Channel picker */
-  .ch-pick { background: #0a0a0a; border: 1px solid #262626; border-radius: 10px; padding: 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; display: flex; justify-content: space-between; align-items: center; }
-  .ch-pick:hover { border-color: #404040; }
-  .ch-pick:last-child { margin-bottom: 0; }
-  .ch-pick-left { display: flex; align-items: center; gap: 12px; }
-  .ch-pick-name { font-size: 15px; font-weight: 600; }
-  .ch-pick-desc { font-size: 12px; color: #737373; margin-top: 2px; }
-  .ch-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
-  .ch-status.active { background: #052e16; color: #22c55e; }
-  .ch-status.missing_config { background: #422006; color: #f59e0b; }
-  .ch-status.disabled { background: #1a1a1a; color: #737373; }
-  .ch-pick-arrow { color: #525252; font-size: 14px; }
+/* ── Top bar ── */
+.topbar { padding: 16px 16px 8px; padding-top: calc(env(safe-area-inset-top, 12px) + 12px); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.topbar-title { font-size: 22px; font-weight: 700; }
+.topbar-title span { color: var(--green); }
+.topbar-sub { font-size: 12px; color: var(--text3); }
 
-  /* Step 2: Channel detail */
-  .ch-back { background: none; border: none; color: #737373; font-size: 13px; cursor: pointer; padding: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
-  .ch-back:hover { color: #e5e5e5; }
-  .ch-detail-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-  .ch-detail-desc { font-size: 12px; color: #737373; margin-bottom: 18px; }
-  .ch-field { margin-bottom: 14px; }
-  .ch-field label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #999; margin-bottom: 4px; }
-  .ch-field label .req { color: #ef4444; }
-  .ch-field textarea { width: 100%; min-height: 56px; resize: vertical; font-size: 12px; line-height: 1.5; }
-  .ch-field input[type="text"], .ch-field input[type="password"] { width: 100%; font-size: 13px; }
-  .ch-field select { width: 100%; font-size: 13px; }
-  .ch-help { font-size: 11px; color: #525252; margin-top: 4px; line-height: 1.4; }
-  .ch-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; margin-top: 14px; border-top: 1px solid #262626; }
-  .toggle { position: relative; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #999; }
-  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-  .toggle .slider { position: relative; width: 36px; height: 20px; background: #333; border-radius: 10px; transition: 0.2s; }
-  .toggle .slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #737373; border-radius: 50%; transition: 0.2s; }
-  .toggle input:checked + .slider { background: #22c55e; }
-  .toggle input:checked + .slider::before { transform: translateX(16px); background: #fff; }
-  .ch-actions { display: flex; align-items: center; gap: 8px; }
-  .btn-save { background: #22c55e; color: #0a0a0a; border: none; border-radius: 6px; padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .btn-save:hover { opacity: 0.85; }
-  .ch-toast { font-size: 12px; }
-  .ch-toast.ok { color: #22c55e; }
-  .ch-toast.err { color: #ef4444; }
+/* ── Bottom nav ── */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + var(--safe-bottom)); padding-bottom: var(--safe-bottom); background: rgba(10,10,10,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; z-index: 50; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: color 0.15s; color: var(--text3); border: none; background: none; }
+.nav-item.active { color: var(--green); }
+.nav-icon { font-size: 22px; line-height: 1; }
+.nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
 
-  /* Telegram account management */
-  .tg-section { background: #111; border: 1px solid #262626; border-radius: 8px; padding: 14px; margin-top: 16px; margin-bottom: 4px; }
-  .tg-section-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-  .acct-list { margin-bottom: 12px; }
-  .acct-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #0a0a0a; border: 1px solid #262626; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
-  .acct-info { display: flex; align-items: center; gap: 8px; }
-  .acct-label { font-weight: 600; color: #e5e5e5; }
-  .acct-phone { color: #737373; }
-  .acct-btns { display: flex; gap: 4px; }
-  .acct-btns button { padding: 3px 8px; font-size: 11px; border-radius: 4px; }
-  .btn-tg { background: #0088cc; color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-  .btn-tg:hover { opacity: 0.85; }
-  .btn-tg:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-danger { background: #7f1d1d; color: #fca5a5; border: none; cursor: pointer; }
-  .btn-danger:hover { background: #991b1b; }
-  .acct-add { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-  .acct-add input { font-size: 12px; padding: 6px 10px; flex: 1; min-width: 80px; }
-  .acct-add button { padding: 6px 12px; font-size: 12px; }
-  .tg-auth-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .tg-auth-row input { font-size: 13px; flex: 1; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
-  .dot.green { background: #22c55e; }
-  .dot.yellow { background: #f59e0b; }
-  .dot.red { background: #ef4444; }
+/* ── Cards ── */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.card:last-child { margin-bottom: 0; }
+
+/* ── Search form ── */
+.search-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.search-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.search-row:last-child { margin-bottom: 0; }
+input, select, textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 15px;
+  flex: 1;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--green); }
+.btn-fire {
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.btn-fire:disabled { opacity: 0.4; }
+
+/* ── Stats row ── */
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+.stat-val { font-size: 20px; font-weight: 700; color: var(--green); }
+.stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* ── Job card ── */
+.job-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+.job-card:active { background: var(--bg3); }
+.job-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.job-title { font-size: 16px; font-weight: 600; line-height: 1.3; flex: 1; margin-right: 8px; }
+.job-salary { color: var(--green); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.job-company { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.tag { background: var(--bg3); color: var(--text2); padding: 3px 8px; border-radius: 6px; font-size: 11px; border: 1px solid var(--border); }
+.job-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-sm { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.btn-star { background: var(--bg3); color: var(--amber); border: 1px solid var(--border); }
+
+/* ── Empty / loading ── */
+.empty { text-align: center; color: var(--text3); padding: 60px 20px; font-size: 14px; }
+.spin { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.center-spin { display: flex; justify-content: center; padding: 40px 0; }
+
+/* ── Saved list ── */
+.saved-empty { text-align: center; color: var(--text3); padding: 60px 20px; }
+
+/* ── Channel config ── */
+.ch-pick { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.15s; }
+.ch-pick:active { background: var(--bg3); }
+.ch-pick-info { flex: 1; }
+.ch-pick-name { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+.ch-pick-desc { font-size: 12px; color: var(--text3); }
+.ch-pick-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 500; }
+.badge.active { background: var(--green-dim); color: var(--green); }
+.badge.missing { background: #422006; color: var(--amber); }
+.badge.off { background: var(--bg3); color: var(--text3); }
+.ch-arrow { color: var(--text3); font-size: 16px; }
+
+/* ── Channel detail ── */
+.detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.btn-back { background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px; }
+.detail-title { font-size: 20px; font-weight: 700; }
+.field-group { margin-bottom: 14px; }
+.field-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+.field-label .req { color: var(--red); }
+.field-help { font-size: 11px; color: var(--text3); margin-top: 4px; line-height: 1.4; }
+.ch-footer-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border); }
+.toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.toggle input { display: none; }
+.toggle-track { width: 44px; height: 26px; background: var(--border); border-radius: 13px; position: relative; transition: background 0.2s; }
+.toggle-track::after { content: ''; position: absolute; width: 20px; height: 20px; background: var(--text3); border-radius: 50%; top: 3px; left: 3px; transition: all 0.2s; }
+.toggle input:checked + .toggle-track { background: var(--green); }
+.toggle input:checked + .toggle-track::after { left: 21px; background: #fff; }
+.toggle-label { font-size: 14px; color: var(--text2); }
+.btn-save { background: var(--green); color: #000; border: none; border-radius: 10px; padding: 10px 24px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.toast { font-size: 12px; }
+.toast.ok { color: var(--green); }
+.toast.err { color: var(--red); }
+
+/* ── Telegram accounts ── */
+.tg-section { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 16px; }
+.tg-section-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
+.acct-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+.acct-info { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.acct-name { font-weight: 600; }
+.acct-phone { color: var(--text3); font-size: 12px; }
+.acct-btns { display: flex; gap: 6px; }
+.btn-login { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-del { background: #7f1d1d; color: #fca5a5; border: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot.g { background: var(--green); }
+.dot.r { background: var(--red); }
+.add-acct-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.add-acct-form input { font-size: 13px; padding: 9px 12px; }
+.add-acct-form .btn-full { grid-column: 1/-1; }
+.btn-full { width: 100%; background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.login-box { margin-top: 8px; margin-bottom: 8px; padding: 10px; background: var(--bg2); border-radius: 10px; border: 1px solid var(--border); }
+.login-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.login-row:last-child { margin-bottom: 0; }
+.login-row input { font-size: 13px; padding: 9px 12px; }
+.btn-code { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+/* ── Modal for config ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
+.modal-overlay.show { display: block; }
+.modal-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-radius: 20px 20px 0 0; max-height: 92dvh; overflow-y: auto; padding: 0 0 calc(var(--safe-bottom) + 16px); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+.modal-overlay.show .modal-sheet { transform: translateY(0); }
+.modal-drag { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+.modal-body { padding: 16px; }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
+
+<!-- ══ Screen: 狙击 ══ -->
+<div class="screen active" id="screen-search">
+  <div class="topbar">
     <div>
-      <h1><span>Scraper</span> 多渠道职位狙击</h1>
-      <p class="subtitle">输入条件 → 实时抓取 → AI 归一化 → 精准命中</p>
-    </div>
-    <button class="btn-config" onclick="openConfig()">⚙️ 渠道配置</button>
-  </div>
-
-  <div class="search-box">
-    <div class="row">
-      <input id="keyword" type="text" placeholder="关键词：前端、Python、产品经理..." autofocus>
-      <select id="city">
-        <option value="">全国</option>
-        <option value="深圳">深圳</option><option value="北京">北京</option><option value="上海">上海</option>
-        <option value="广州">广州</option><option value="杭州">杭州</option><option value="成都">成都</option>
-        <option value="南京">南京</option><option value="武汉">武汉</option><option value="西安">西安</option>
-        <option value="长沙">长沙</option><option value="重庆">重庆</option><option value="苏州">苏州</option>
-        <option value="厦门">厦门</option>
-      </select>
-      <select id="channel"></select>
-    </div>
-    <div class="row">
-      <input id="salary_min" type="number" placeholder="最低月薪 (K)" style="flex:0.5">
-      <button id="fire" onclick="doSearch()">🎯 狙击</button>
+      <div class="topbar-title"><span>Scraper</span></div>
+      <div class="topbar-sub">多渠道职位狙击</div>
     </div>
   </div>
+  <div class="screen-body">
+    <div class="search-card">
+      <div class="search-row">
+        <input id="keyword" type="text" placeholder="关键词：前端、Python..." inputmode="search">
+      </div>
+      <div class="search-row">
+        <select id="city" style="flex:1">
+          <option value="">全国</option>
+          <option value="深圳">深圳</option><option value="北京">北京</option><option value="上海">上海</option>
+          <option value="广州">广州</option><option value="杭州">杭州</option><option value="成都">成都</option>
+          <option value="南京">南京</option><option value="武汉">武汉</option><option value="西安">西安</option>
+          <option value="长沙">长沙</option><option value="重庆">重庆</option>
+        </select>
+        <select id="channel" style="flex:1"></select>
+      </div>
+      <div class="search-row">
+        <input id="salary_min" type="number" placeholder="最低月薪 (K)" inputmode="numeric">
+        <button class="btn-fire" id="fire" onclick="doSearch()">🎯 狙击</button>
+      </div>
+    </div>
 
-  <div class="stats">
-    <div class="stat"><div class="stat-label">命中职位</div><div class="stat-value green" id="total">—</div></div>
-    <div class="stat"><div class="stat-label">当前渠道</div><div class="stat-value" id="ch">—</div></div>
-    <div class="stat"><div class="stat-label">耗时</div><div class="stat-value" id="elapsed">—</div></div>
-  </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val" id="total">—</div><div class="stat-lbl">命中职位</div></div>
+      <div class="stat-card"><div class="stat-val" id="ch-stat" style="font-size:13px;margin-top:4px">—</div><div class="stat-lbl">渠道</div></div>
+      <div class="stat-card"><div class="stat-val" id="elapsed">—</div><div class="stat-lbl">耗时</div></div>
+    </div>
 
-  <div id="results" class="job-list">
-    <div class="empty">输入关键词，点击狙击 🎯</div>
+    <div id="results"><div class="empty">输入关键词，点击狙击 🎯</div></div>
   </div>
 </div>
 
-<!-- Config Modal -->
-<div class="modal-overlay" id="configModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="configTitle">⚙️ 渠道配置</h2>
-      <button class="modal-close" onclick="closeConfig()">✕</button>
-    </div>
-    <div class="modal-body" id="configBody"></div>
+<!-- ══ Screen: 收藏 ══ -->
+<div class="screen" id="screen-saved">
+  <div class="topbar">
+    <div class="topbar-title">⭐ 收藏</div>
+  </div>
+  <div class="screen-body">
+    <div id="saved-list"><div class="center-spin"><div class="spin"></div></div></div>
   </div>
 </div>
+
+<!-- ══ Screen: 渠道 ══ -->
+<div class="screen" id="screen-config">
+  <div class="topbar">
+    <div class="topbar-title" id="config-title">渠道</div>
+  </div>
+  <div class="screen-body" id="config-body">
+    <div class="center-spin"><div class="spin"></div></div>
+  </div>
+</div>
+
+<!-- ══ Bottom Nav ══ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-search" onclick="switchTab('search')">
+    <span class="nav-icon">🎯</span>
+    <span class="nav-label">狙击</span>
+  </button>
+  <button class="nav-item" id="nav-saved" onclick="switchTab('saved')">
+    <span class="nav-icon">⭐</span>
+    <span class="nav-label">收藏</span>
+  </button>
+  <button class="nav-item" id="nav-config" onclick="switchTab('config')">
+    <span class="nav-icon">📡</span>
+    <span class="nav-label">渠道</span>
+  </button>
+</nav>
 
 <script>
-const STATUS_LABEL = { active: '已就绪', missing_config: '待配置', disabled: '未启用' };
-let _schema = null, _configs = null;
+// ══ PWA ══
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
-// ── 初始化渠道下拉 ────────────────────────────
+// ══ Tab switching ══
+const TABS = ['search', 'saved', 'config'];
+function switchTab(tab) {
+  TABS.forEach(t => {
+    document.getElementById(`screen-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'saved') loadSaved();
+  if (tab === 'config') showChannelPicker();
+}
+
+// ══ Channel select init ══
+const STATUS_LABEL = { active: '已就绪', missing_config: '待配置', disabled: '未启用' };
+let _schema = null, _cfgs = null;
+
 async function loadChannels() {
   try {
     const res = await fetch('/api/channels');
@@ -187,267 +286,216 @@ async function loadChannels() {
     const sel = document.getElementById('channel');
     sel.innerHTML = '';
     data.channels.forEach(ch => {
-      const opt = document.createElement('option');
-      opt.value = ch.id;
-      opt.textContent = ch.name;
-      if (ch.status !== 'active') { opt.disabled = true; opt.textContent += ` (${STATUS_LABEL[ch.status] || ch.status})`; }
-      sel.appendChild(opt);
+      const o = document.createElement('option');
+      o.value = ch.id;
+      o.textContent = ch.name;
+      if (ch.status !== 'active') { o.disabled = true; o.textContent += ch.status === 'missing_config' ? ' (待配置)' : ' (未启用)'; }
+      sel.appendChild(o);
     });
     const active = data.channels.find(c => c.status === 'active');
-    if (active) { sel.value = active.id; document.getElementById('ch').textContent = active.name; }
-  } catch (e) { console.error('Failed to load channels:', e); }
+    if (active) { sel.value = active.id; document.getElementById('ch-stat').textContent = active.name; }
+  } catch {}
 }
 loadChannels();
 
-// ── 搜索 ────────────────────────────
+// ══ Search ══
 async function doSearch() {
   const keyword = document.getElementById('keyword').value.trim();
   if (!keyword) return;
   const btn = document.getElementById('fire');
   btn.disabled = true;
-  document.getElementById('results').innerHTML = '<div class="loading">正在狙击目标...</div>';
-  const channel = document.getElementById('channel').value;
-  document.getElementById('ch').textContent = document.getElementById('channel').selectedOptions[0]?.textContent?.replace(/ \(.*\)/, '') || channel;
-  const body = { keyword, city: document.getElementById('city').value, channel, salary_min: parseInt(document.getElementById('salary_min').value) || null };
+  document.getElementById('results').innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  const chOpt = document.getElementById('channel').selectedOptions[0];
+  document.getElementById('ch-stat').textContent = chOpt?.textContent?.replace(/ \(.*\)/, '') || '—';
+  const body = { keyword, city: document.getElementById('city').value, channel: document.getElementById('channel').value, salary_min: parseInt(document.getElementById('salary_min').value) || null };
   if (body.salary_min) body.salary_min *= 1000;
   const t0 = Date.now();
   try {
     const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
-    const ms = Date.now() - t0;
     document.getElementById('total').textContent = data.total;
-    document.getElementById('elapsed').textContent = (ms / 1000).toFixed(1) + 's';
-    if (!data.jobs.length) { document.getElementById('results').innerHTML = '<div class="empty">没有命中，换个关键词试试</div>'; return; }
-    document.getElementById('results').innerHTML = data.jobs.map(j => `
-      <div class="job-card">
-        <div class="job-header"><span class="job-title">${esc(j.title)}</span><span class="job-salary">${esc(j.salary)}</span></div>
-        <div class="job-company">${esc(j.company)} · ${esc(j.city)} · ${esc(j.experience)}</div>
-        <div class="job-meta">${(j.skills||[]).map(s => `<span class="tag skill">${esc(s)}</span>`).join('')}${j.education ? `<span class="tag">${esc(j.education)}</span>` : ''}</div>
-        <div class="job-actions">${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-outline">查看原文</button></a>` : ''}<button class="btn-sm" onclick="saveJob(this, ${esc(JSON.stringify(JSON.stringify(j)))})">⭐ 收藏</button></div>
-      </div>
-    `).join('');
-  } catch (e) { document.getElementById('results').innerHTML = `<div class="empty">请求失败: ${esc(e.message)}</div>`; }
+    document.getElementById('elapsed').textContent = ((Date.now() - t0) / 1000).toFixed(1) + 's';
+    document.getElementById('results').innerHTML = data.jobs.length
+      ? data.jobs.map(jobCard).join('')
+      : '<div class="empty">没有命中，换个关键词试试</div>';
+  } catch (e) { document.getElementById('results').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
   finally { btn.disabled = false; }
+}
+
+function jobCard(j) {
+  return `<div class="job-card">
+    <div class="job-head"><div class="job-title">${esc(j.title)}</div><div class="job-salary">${esc(j.salary)}</div></div>
+    <div class="job-company">${esc(j.company)}${j.city ? ' · ' + esc(j.city) : ''}${j.experience ? ' · ' + esc(j.experience) : ''}</div>
+    ${(j.skills||[]).length ? `<div class="tags">${j.skills.slice(0,4).map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div>` : ''}
+    <div class="job-actions">
+      ${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-ghost">查看原文</button></a>` : ''}
+      <button class="btn-sm btn-star" onclick="saveJob(this, ${esc(JSON.stringify(JSON.stringify(j)))})">⭐ 收藏</button>
+    </div>
+  </div>`;
 }
 
 async function saveJob(el, jobJson) {
   try {
     const res = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: jobJson });
-    if (res.ok) { el.textContent = '✅ 已收藏'; el.disabled = true; }
-    else { const d = await res.json(); el.textContent = d.detail === 'Job already saved' ? '✅ 已收藏' : '❌ 失败'; }
+    el.textContent = res.ok ? '✅ 已收藏' : ((await res.json()).detail === 'Job already saved' ? '✅ 已收藏' : '❌ 失败');
+    el.disabled = true;
   } catch { el.textContent = '❌ 失败'; }
 }
 
-// ══════════════════════════════════════════════════
-// 配置弹窗 — 两段式：选渠道 → 渠道详情
-// ══════════════════════════════════════════════════
-
-async function openConfig() {
-  document.getElementById('configModal').classList.add('show');
-  showChannelPicker();
-}
-
-function closeConfig() {
-  document.getElementById('configModal').classList.remove('show');
-  loadChannels();
-}
-
-// ── Step 1: 渠道选择列表 ────────────────────────────
-async function showChannelPicker() {
-  const body = document.getElementById('configBody');
-  document.getElementById('configTitle').textContent = '⚙️ 选择渠道';
-  body.innerHTML = '<div class="loading">加载中...</div>';
-
+// ══ Saved jobs ══
+async function loadSaved() {
+  const el = document.getElementById('saved-list');
+  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
   try {
-    const [schemaRes, cfgRes] = await Promise.all([
-      fetch('/api/channels/schema').then(r => r.json()),
-      fetch('/api/channels/config').then(r => r.json()),
-    ]);
-    _schema = schemaRes.schema;
-    _configs = cfgRes.channels;
-
-    body.innerHTML = Object.entries(_schema).map(([chId, s]) => {
-      const cfg = _configs[chId] || {};
-      const enabled = cfg.enabled ?? false;
-      const required = s.fields.filter(f => f.required);
-      const filled = required.every(f => !!cfg[f.key]);
-      let status = 'disabled';
-      if (enabled && filled) status = 'active';
-      else if (enabled) status = 'missing_config';
-
-      return `
-        <div class="ch-pick" onclick="showChannelDetail('${chId}')">
-          <div class="ch-pick-left">
-            <div>
-              <div class="ch-pick-name">${esc(s.name)}</div>
-              <div class="ch-pick-desc">${esc(s.description)}</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span class="ch-status ${status}">${STATUS_LABEL[status]}</span>
-            <span class="ch-pick-arrow">▶</span>
-          </div>
-        </div>`;
+    const res = await fetch('/api/saved');
+    const data = await res.json();
+    if (!data.jobs.length) { el.innerHTML = '<div class="saved-empty">暂无收藏</div>'; return; }
+    el.innerHTML = data.jobs.map(j => {
+      const job = { title: j.title, company: j.company, salary: j.salary, city: j.city, experience: j.experience, skills: j.skills || [], url: j.url || '', education: j.education || '' };
+      return jobCard(job);
     }).join('');
-  } catch (e) {
-    body.innerHTML = `<div class="empty">加载失败: ${esc(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
-// ── Step 2: 渠道详情配置 ────────────────────────────
+// ══ Channel config — Step 1: picker ══
+async function showChannelPicker() {
+  document.getElementById('config-title').textContent = '渠道';
+  const body = document.getElementById('config-body');
+  body.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  try {
+    const [sr, cr] = await Promise.all([fetch('/api/channels/schema').then(r=>r.json()), fetch('/api/channels/config').then(r=>r.json())]);
+    _schema = sr.schema; _cfgs = cr.channels;
+    body.innerHTML = Object.entries(_schema).map(([id, s]) => {
+      const cfg = _cfgs[id] || {};
+      const en = cfg.enabled ?? false;
+      const filled = s.fields.filter(f=>f.required).every(f=>!!cfg[f.key]);
+      const status = en && filled ? 'active' : en ? 'missing' : 'off';
+      const badge = en && filled ? '已就绪' : en ? '待配置' : '未启用';
+      return `<div class="ch-pick" onclick="showChannelDetail('${id}')">
+        <div class="ch-pick-info"><div class="ch-pick-name">${esc(s.name)}</div><div class="ch-pick-desc">${esc(s.description)}</div></div>
+        <div class="ch-pick-right"><span class="badge ${status}">${badge}</span><span class="ch-arrow">›</span></div>
+      </div>`;
+    }).join('');
+  } catch (e) { body.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+// ══ Channel config — Step 2: detail ══
 async function showChannelDetail(chId) {
-  const body = document.getElementById('configBody');
-  const s = _schema[chId];
-  const cfg = _configs[chId] || {};
-  const enabled = cfg.enabled ?? false;
-
-  document.getElementById('configTitle').textContent = `⚙️ ${s.name}`;
-
-  let html = `<button class="ch-back" onclick="showChannelPicker()">← 返回渠道列表</button>`;
-  html += `<div class="ch-detail-desc">${esc(s.description)}</div>`;
-
-  // 配置字段
+  const s = _schema[chId], cfg = _cfgs[chId] || {}, en = cfg.enabled ?? false;
+  document.getElementById('config-title').textContent = s.name;
+  let html = `<div class="detail-header"><button class="btn-back" onclick="showChannelPicker()">‹</button><div class="detail-title">${esc(s.name)}</div></div>`;
   html += s.fields.map(f => renderField(chId, f, cfg[f.key] || f.default || '')).join('');
-
-  // Telegram 专属：账号管理
-  if (chId === 'telegram') {
-    html += `<div class="tg-section">
-      <div class="tg-section-title">📱 账号管理</div>
-      <div class="acct-list" id="tg-acct-list"><div style="color:#525252">加载中...</div></div>
-      <div class="acct-add">
-        <input type="text" id="tg-new-label" placeholder="备注名">
-        <input type="text" id="tg-new-phone" placeholder="+66...">
-        <input type="text" id="tg-new-api-id" placeholder="API ID">
-        <input type="password" id="tg-new-api-hash" placeholder="API Hash">
-        <button class="btn-tg" onclick="tgAddAccount()">添加账号</button>
-      </div>
-      <div class="ch-toast" id="tg-auth-toast"></div>
-    </div>`;
-  }
-
-  // 底部：启用开关 + 保存
-  html += `<div class="ch-footer">
-    <label class="toggle">
-      <input type="checkbox" id="enabled-${chId}" ${enabled ? 'checked' : ''}>
-      <span class="slider"></span>
-      启用
-    </label>
-    <div class="ch-actions">
-      <span class="ch-toast" id="toast-${chId}"></span>
+  if (chId === 'telegram') html += tgAccountsSection();
+  html += `<div class="ch-footer-bar">
+    <label class="toggle"><input type="checkbox" id="en-${chId}" ${en?'checked':''}><div class="toggle-track"></div><span class="toggle-label">启用</span></label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="toast" id="toast-${chId}"></span>
       <button class="btn-save" onclick="saveChannel('${chId}')">保存</button>
     </div>
   </div>`;
-
-  body.innerHTML = html;
-
-  if (chId === 'telegram') setTimeout(loadTgAccounts, 100);
+  document.getElementById('config-body').innerHTML = html;
+  if (chId === 'telegram') setTimeout(loadTgAccounts, 50);
 }
 
-function renderField(chId, field, value) {
-  const id = `field-${chId}-${field.key}`;
-  const req = field.required ? '<span class="req">*</span>' : '';
-  let input = '';
-  if (field.type === 'textarea') input = `<textarea id="${id}" placeholder="${esc(field.placeholder || '')}">${esc(value)}</textarea>`;
-  else if (field.type === 'select') input = `<select id="${id}">${(field.options||[]).map(o => `<option value="${esc(o)}" ${o === value ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
-  else if (field.type === 'password') input = `<input type="password" id="${id}" value="${esc(value)}" placeholder="${esc(field.placeholder || '')}">`;
-  else input = `<input type="text" id="${id}" value="${esc(value)}" placeholder="${esc(field.placeholder || '')}">`;
-  const help = field.help ? `<div class="ch-help">${esc(field.help)}</div>` : '';
-  return `<div class="ch-field"><label>${esc(field.label)} ${req}</label>${input}${help}</div>`;
+function renderField(chId, f, val) {
+  const id = `f-${chId}-${f.key}`, req = f.required ? '<span class="req">*</span>' : '';
+  let inp;
+  if (f.type === 'textarea') inp = `<textarea id="${id}" placeholder="${esc(f.placeholder||'')}" rows="3">${esc(val)}</textarea>`;
+  else if (f.type === 'select') inp = `<select id="${id}">${(f.options||[]).map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  else if (f.type === 'password') inp = `<input type="password" id="${id}" value="${esc(val)}" placeholder="${esc(f.placeholder||'')}">`;
+  else inp = `<input type="text" id="${id}" value="${esc(val)}" placeholder="${esc(f.placeholder||'')}">`;
+  return `<div class="field-group"><div class="field-label">${esc(f.label)} ${req}</div>${inp}${f.help?`<div class="field-help">${esc(f.help)}</div>`:''}</div>`;
 }
 
 async function saveChannel(chId) {
   const toast = document.getElementById(`toast-${chId}`);
-  toast.textContent = '';
-  const payload = { channel: chId, enabled: document.getElementById(`enabled-${chId}`).checked };
-  document.querySelectorAll(`[id^="field-${chId}-"]`).forEach(el => {
-    payload[el.id.replace(`field-${chId}-`, '')] = el.value.trim();
-  });
+  const payload = { channel: chId, enabled: document.getElementById(`en-${chId}`).checked };
+  document.querySelectorAll(`[id^="f-${chId}-"]`).forEach(el => { payload[el.id.replace(`f-${chId}-`, '')] = el.value.trim(); });
   try {
-    const res = await fetch('/api/channels/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (res.ok) { toast.className = 'ch-toast ok'; toast.textContent = '✅ 已保存'; }
-    else { const d = await res.json(); toast.className = 'ch-toast err'; toast.textContent = '❌ ' + (d.detail || '保存失败'); }
-  } catch (e) { toast.className = 'ch-toast err'; toast.textContent = '❌ ' + e.message; }
+    const res = await fetch('/api/channels/config', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    if (res.ok) { toast.className='toast ok'; toast.textContent='✅ 已保存'; loadChannels(); }
+    else { const d=await res.json(); toast.className='toast err'; toast.textContent='❌ '+(d.detail||'失败'); }
+  } catch(e) { toast.className='toast err'; toast.textContent='❌ '+e.message; }
 }
 
-// ── Telegram 多账号管理 ────────────────────────────
+// ══ Telegram accounts ══
+function tgAccountsSection() {
+  return `<div class="tg-section">
+    <div class="tg-section-title">📱 Telegram 账号</div>
+    <div id="tg-list"></div>
+    <div class="add-acct-form">
+      <input type="text" id="tg-label" placeholder="备注名">
+      <input type="text" id="tg-phone" placeholder="+66...">
+      <input type="text" id="tg-aid" placeholder="API ID">
+      <input type="password" id="tg-ahash" placeholder="API Hash">
+      <button class="btn-full" onclick="tgAdd()">添加账号</button>
+    </div>
+    <div class="toast" id="tg-toast" style="margin-top:8px"></div>
+  </div>`;
+}
+
 async function loadTgAccounts() {
-  const list = document.getElementById('tg-acct-list');
-  if (!list) return;
+  const el = document.getElementById('tg-list');
+  if (!el) return;
   try {
-    const res = await fetch('/api/telegram/accounts');
-    const data = await res.json();
-    if (!data.accounts.length) { list.innerHTML = '<div style="color:#525252;font-size:12px">还没有账号，在下方添加</div>'; return; }
-    list.innerHTML = data.accounts.map(a => `
-      <div class="acct-item" id="acct-${a.id}">
-        <div class="acct-info">
-          <span class="dot ${a.has_session ? 'green' : 'red'}"></span>
-          <span class="acct-label">${esc(a.label)}</span>
-          <span class="acct-phone">${esc(a.phone)}</span>
-          <span style="color:#525252">${a.has_session ? '已登录' : '未登录'}</span>
-        </div>
+    const d = await fetch('/api/telegram/accounts').then(r=>r.json());
+    if (!d.accounts.length) { el.innerHTML = '<div style="color:var(--text3);font-size:12px;margin-bottom:8px">暂无账号</div>'; return; }
+    el.innerHTML = d.accounts.map(a => `
+      <div class="acct-row" id="ar-${a.id}">
+        <div class="acct-info"><span class="dot ${a.has_session?'g':'r'}"></span><div><div class="acct-name">${esc(a.label)}</div><div class="acct-phone">${esc(a.phone)} ${a.has_session?'· 已登录':''}</div></div></div>
         <div class="acct-btns">
-          ${!a.has_session ? `<button class="btn-tg" onclick="tgLogin(${a.id})">登录</button>` : ''}
-          <button class="btn-danger" onclick="tgDeleteAcct(${a.id})">删除</button>
+          ${!a.has_session?`<button class="btn-login" onclick="tgToggleLogin(${a.id})">登录</button>`:''}
+          <button class="btn-del" onclick="tgDel(${a.id})">删</button>
         </div>
       </div>
-      <div id="login-row-${a.id}" style="display:none;margin-bottom:6px">
-        <div class="tg-auth-row"><button class="btn-tg" onclick="tgSendCode(${a.id})">发送验证码</button></div>
-        <div class="tg-auth-row" id="code-row-${a.id}" style="display:none">
-          <input type="text" id="code-${a.id}" placeholder="输入验证码">
-          <input type="password" id="2fa-${a.id}" placeholder="两步验证密码（如有）" style="display:none">
-          <button class="btn-tg" onclick="tgVerify(${a.id})">验证</button>
+      <div id="lb-${a.id}" style="display:none" class="login-box">
+        <div class="login-row"><button class="btn-code" onclick="tgSend(${a.id})">发送验证码</button><span class="toast" id="lt-${a.id}"></span></div>
+        <div class="login-row" id="cr-${a.id}" style="display:none">
+          <input type="text" id="code-${a.id}" placeholder="验证码">
+          <input type="password" id="2fa-${a.id}" placeholder="两步验证" style="display:none">
+          <button class="btn-code" onclick="tgVerify(${a.id})">验证</button>
         </div>
-        <div class="ch-toast" id="login-toast-${a.id}"></div>
       </div>
     `).join('');
-  } catch (e) { list.innerHTML = `<div style="color:#ef4444;font-size:12px">加载失败: ${esc(e.message)}</div>`; }
+  } catch(e) { el.innerHTML = `<div style="color:var(--red);font-size:12px">${esc(e.message)}</div>`; }
 }
 
-async function tgAddAccount() {
-  const label = document.getElementById('tg-new-label').value.trim();
-  const phone = document.getElementById('tg-new-phone').value.trim();
-  const api_id = document.getElementById('tg-new-api-id').value.trim();
-  const api_hash = document.getElementById('tg-new-api-hash').value.trim();
-  const toast = document.getElementById('tg-auth-toast');
-  if (!label || !phone || !api_id || !api_hash) { toast.className='ch-toast err'; toast.textContent='请填完所有字段'; return; }
+async function tgAdd() {
+  const label=v('tg-label'), phone=v('tg-phone'), api_id=v('tg-aid'), api_hash=v('tg-ahash'), t=document.getElementById('tg-toast');
+  if (!label||!phone||!api_id||!api_hash){t.className='toast err';t.textContent='请填完所有字段';return;}
   try {
-    const res = await fetch('/api/telegram/accounts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label, phone, api_id, api_hash}) });
-    const data = await res.json();
-    if (data.ok) { toast.className='ch-toast ok'; toast.textContent=`✅ ${data.message}`; ['tg-new-label','tg-new-phone','tg-new-api-id','tg-new-api-hash'].forEach(id => document.getElementById(id).value=''); loadTgAccounts(); }
-    else { toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'添加失败'); }
-  } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
+    const d = await fetch('/api/telegram/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,phone,api_id,api_hash})}).then(r=>r.json());
+    if (d.ok){t.className='toast ok';t.textContent='✅ '+d.message;['tg-label','tg-phone','tg-aid','tg-ahash'].forEach(i=>document.getElementById(i).value='');loadTgAccounts();}
+    else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
+  }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
 }
 
-async function tgDeleteAcct(id) { if (!confirm('确定删除？')) return; await fetch(`/api/telegram/accounts/${id}`, {method:'DELETE'}); loadTgAccounts(); }
-function tgLogin(id) { const r = document.getElementById(`login-row-${id}`); r.style.display = r.style.display === 'none' ? 'block' : 'none'; }
+async function tgDel(id){if(!confirm('确定删除？'))return;await fetch(`/api/telegram/accounts/${id}`,{method:'DELETE'});loadTgAccounts();}
+function tgToggleLogin(id){const el=document.getElementById(`lb-${id}`);el.style.display=el.style.display==='none'?'block':'none';}
 
-async function tgSendCode(id) {
-  const toast = document.getElementById(`login-toast-${id}`); toast.textContent = '发送中...';
-  try {
-    const res = await fetch(`/api/telegram/accounts/${id}/send-code`, {method:'POST'}); const data = await res.json();
-    if (data.ok) { toast.className='ch-toast ok'; toast.textContent=data.message; document.getElementById(`code-row-${id}`).style.display='flex'; }
-    else { toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'发送失败'); }
-  } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
+async function tgSend(id){
+  const t=document.getElementById(`lt-${id}`);t.textContent='发送中...';
+  try{const d=await fetch(`/api/telegram/accounts/${id}/send-code`,{method:'POST'}).then(r=>r.json());
+    if(d.ok){t.className='toast ok';t.textContent=d.message;document.getElementById(`cr-${id}`).style.display='flex';}
+    else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
+  }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
 }
 
-async function tgVerify(id) {
-  const code = document.getElementById(`code-${id}`).value.trim();
-  const password = document.getElementById(`2fa-${id}`).value.trim();
-  const toast = document.getElementById(`login-toast-${id}`);
-  if (!code) { toast.className='ch-toast err'; toast.textContent='请输入验证码'; return; }
-  try {
-    const res = await fetch(`/api/telegram/accounts/${id}/verify-code`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({code, password}) });
-    const data = await res.json();
-    if (data.ok) { toast.className='ch-toast ok'; toast.textContent='✅ '+data.message; loadTgAccounts(); }
-    else if (data.need_2fa) { document.getElementById(`2fa-${id}`).style.display='block'; toast.className='ch-toast err'; toast.textContent='需要输入两步验证密码'; }
-    else { toast.className='ch-toast err'; toast.textContent='❌ '+(data.detail||'验证失败'); }
-  } catch(e) { toast.className='ch-toast err'; toast.textContent='❌ '+e.message; }
+async function tgVerify(id){
+  const code=v(`code-${id}`), pw=v(`2fa-${id}`), t=document.getElementById(`lt-${id}`);
+  if(!code){t.className='toast err';t.textContent='请输入验证码';return;}
+  try{const d=await fetch(`/api/telegram/accounts/${id}/verify-code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,password:pw})}).then(r=>r.json());
+    if(d.ok){t.className='toast ok';t.textContent='✅ 登录成功';loadTgAccounts();}
+    else if(d.need_2fa){document.getElementById(`2fa-${id}`).style.display='block';t.className='toast err';t.textContent='需要两步验证密码';}
+    else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
+  }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
 }
 
-document.getElementById('configModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfig(); });
-function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
-document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+// ══ Helpers ══
+function v(id){return document.getElementById(id)?.value?.trim()||'';}
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
+document.getElementById('keyword').addEventListener('keydown', e=>{if(e.key==='Enter')doSearch();});
 </script>
 </body>
 </html>
