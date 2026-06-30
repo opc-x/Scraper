@@ -11,8 +11,30 @@ from app.api.routes import channels, config, save, search, telegram_auth, telegr
 from app.core.config import settings
 
 
+def _run_migrations():
+    from app.db.connection import engine
+    from app.db.schema import Base
+    from sqlalchemy import text
+    if not engine:
+        return
+    Base.metadata.create_all(engine, checkfirst=True)
+    # 补加唯一约束（表已存在时 create_all 不会自动加）
+    with engine.begin() as conn:
+        conn.execute(text("""
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'uq_tg_classify'
+                ) THEN
+                    ALTER TABLE tg_classify_cache
+                    ADD CONSTRAINT uq_tg_classify UNIQUE (account_id, target, msg_id);
+                END IF;
+            END $$;
+        """))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _run_migrations()
     yield
     await close_all()
     await close_all_clients()

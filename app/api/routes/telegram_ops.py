@@ -554,7 +554,7 @@ async def classify_messages(req: ClassifyRequest):
                     conn.execute(sql("""
                         INSERT INTO tg_classify_cache (account_id, target, msg_id, keep, tag, reason)
                         VALUES (:aid, :t, :mid, :keep, :tag, :reason)
-                        ON CONFLICT DO NOTHING
+                        ON CONFLICT ON CONSTRAINT uq_tg_classify DO NOTHING
                     """), {"aid": account_id, "t": req.target, "mid": mid,
                            "keep": cls.get("keep", True), "tag": cls.get("tag", "其他"),
                            "reason": cls.get("reason", "")})
