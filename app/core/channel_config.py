@@ -44,6 +44,39 @@ CHANNEL_SCHEMA = {
             },
         ],
     },
+    "discord": {
+        "name": "Discord",
+        "description": "海外远程/Web3/AI 圈招聘，全英文为主",
+        "fields": [
+            {
+                "key": "user_token",
+                "label": "User Token",
+                "type": "password",
+                "placeholder": "粘贴 Discord User Token...",
+                "help": (
+                    "浏览器登录 discord.com → F12 → Network → "
+                    "刷新 → Request Headers 的 authorization（账号 Token）"
+                ),
+                "required": True,
+            },
+            {
+                "key": "sources",
+                "label": "监听来源",
+                "type": "textarea",
+                "placeholder": "每行一个频道 ID 或服务器 ID\n例：\n1234567890123456789",
+                "help": "频道 ID：右键频道复制；服务器 ID：右键服务器图标复制，自动展开文字频道",
+                "required": True,
+            },
+            {
+                "key": "llm_api_key",
+                "label": "AI 解析 Key（DeepSeek）",
+                "type": "password",
+                "placeholder": "sk-...",
+                "help": "DeepSeek 开放平台 API Key，用于提取职位信息",
+                "required": True,
+            },
+        ],
+    },
     "liepin": {
         "name": "猎聘",
         "description": "3年+中高端，猎头资源",
