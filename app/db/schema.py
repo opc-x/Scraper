@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Integer, String, Text, func
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -50,3 +50,16 @@ class SavedJob(Base):
     score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     tags: Mapped[dict] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class TgClassifyCache(Base):
+    __tablename__ = "tg_classify_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    target: Mapped[str] = mapped_column(String(128), nullable=False)
+    msg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    keep: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    tag: Mapped[str] = mapped_column(String(32), default="")
+    reason: Mapped[str] = mapped_column(String(128), default="")
+    classified_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

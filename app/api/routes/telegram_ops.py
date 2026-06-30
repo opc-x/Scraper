@@ -246,13 +246,16 @@ async def search_messages(
 @router.get("/messages")
 async def get_messages(
     target: str = Query(...),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(100, ge=1, le=500),
+    offset_id: int = Query(0),
     q: str = Query(None),
     account_id: int | None = Query(None),
 ):
     client = await _require_client(account_id)
     entity = await client.get_entity(_resolve_entity_id(target))
     kwargs = {"limit": limit}
+    if offset_id:
+        kwargs["offset_id"] = offset_id
     if q:
         kwargs["search"] = q
 
@@ -313,7 +316,8 @@ async def get_messages(
             "date": _serialize_date(msg.date),
             "sender": _extract_sender(msg),
         })
-    return {"target": target, "messages": messages, "total": len(messages)}
+    min_id = messages[-1]["id"] if messages else None
+    return {"target": target, "messages": messages, "total": len(messages), "next_offset_id": min_id}
 
 
 # ── 用户/频道/群详情 ────────────────────────────
@@ -458,13 +462,16 @@ class ClassifyRequest(BaseModel):
 @router.post("/classify")
 async def classify_messages(req: ClassifyRequest):
     from app.core.channel_config import get_channel_config
+    from app.db.connection import engine
+    from sqlalchemy import text as sql
 
+    account_id = req.account_id or 0
     client = await _require_client(req.account_id)
     entity = await client.get_entity(_resolve_entity_id(req.target))
 
     # ── 1. 拉消息 ──
     raw = []
-    async for msg in client.iter_messages(entity, limit=min(req.limit, 200)):
+    async for msg in client.iter_messages(entity, limit=min(req.limit, 500)):
         s = getattr(msg, "sender", None)
         sender = {}
         if s is not None:
@@ -477,17 +484,36 @@ async def classify_messages(req: ClassifyRequest):
                           "username": getattr(s, "username", None), "type": "channel"}
         raw.append({"id": msg.id, "text": msg.text or "", "date": _serialize_date(msg.date), "sender": sender})
 
-    # ── 2. 规则预筛（快速丢掉明显垃圾）──
+    # ── 2. 读缓存（已分类的跳过 LLM）──
+    cached: dict[int, dict] = {}
+    if engine:
+        try:
+            from app.core.channel_config import _ensure_table
+            from app.db.schema import Base, TgClassifyCache
+            Base.metadata.create_all(engine, checkfirst=True)
+            msg_ids = [m["id"] for m in raw]
+            with engine.connect() as conn:
+                rows = conn.execute(sql(
+                    "SELECT msg_id, keep, tag, reason FROM tg_classify_cache "
+                    "WHERE account_id=:aid AND target=:t AND msg_id=ANY(:ids)"
+                ), {"aid": account_id, "t": req.target, "ids": msg_ids})
+                for row in rows:
+                    cached[row[0]] = {"keep": row[1], "tag": row[2], "reason": row[3]}
+        except Exception as e:
+            logger.warning("Cache read failed: %s", e)
+
+    # ── 3. 规则预筛 ──
     def rule_keep(m: dict) -> bool:
         t = m["text"]
         if len(t) < 10: return False
         if _JUNK_RE.search(t): return False
         return True
 
-    passable = [m for m in raw if rule_keep(m)]
-    rule_dropped = len(raw) - len(passable)
+    uncached = [m for m in raw if m["id"] not in cached]
+    passable = [m for m in uncached if rule_keep(m)]
+    rule_dropped = len(uncached) - len(passable)
 
-    # ── 3. LLM 批分类 ──
+    # ── 4. LLM 批分类（仅未命中缓存的）──
     cfg = get_channel_config("telegram")
     api_key = cfg.get("llm_api_key", "")
     classifications: dict[int, dict] = {}
@@ -520,27 +546,40 @@ async def classify_messages(req: ClassifyRequest):
             except Exception as e:
                 logger.warning("LLM classify batch %d failed: %s", i, e)
 
-    # ── 4. 合并结果 ──
+    # ── 5. 写缓存（仅新分类结果）──
+    if engine and classifications:
+        try:
+            with engine.begin() as conn:
+                for mid, cls in classifications.items():
+                    conn.execute(sql("""
+                        INSERT INTO tg_classify_cache (account_id, target, msg_id, keep, tag, reason)
+                        VALUES (:aid, :t, :mid, :keep, :tag, :reason)
+                        ON CONFLICT DO NOTHING
+                    """), {"aid": account_id, "t": req.target, "mid": mid,
+                           "keep": cls.get("keep", True), "tag": cls.get("tag", "其他"),
+                           "reason": cls.get("reason", "")})
+        except Exception as e:
+            logger.warning("Cache write failed: %s", e)
+
+    # ── 6. 合并结果 ──
     result = []
     for m in raw:
-        cls = classifications.get(m["id"])
-        if cls:
-            m["keep"] = cls.get("keep", True)
-            m["tag"] = cls.get("tag", "其他")
-            m["reason"] = cls.get("reason", "")
+        if m["id"] in cached:
+            c = cached[m["id"]]
+            m["keep"] = c["keep"]; m["tag"] = c["tag"]; m["reason"] = c["reason"]
+        elif m["id"] in classifications:
+            cls = classifications[m["id"]]
+            m["keep"] = cls.get("keep", True); m["tag"] = cls.get("tag", "其他"); m["reason"] = cls.get("reason", "")
         elif rule_keep(m):
-            m["keep"] = True
-            m["tag"] = "未分类"
-            m["reason"] = "规则通过，未经LLM"
+            m["keep"] = True; m["tag"] = "未分类"; m["reason"] = "规则通过"
         else:
-            m["keep"] = False
-            m["tag"] = "垃圾"
-            m["reason"] = "规则过滤"
+            m["keep"] = False; m["tag"] = "垃圾"; m["reason"] = "规则过滤"
         result.append(m)
 
     kept = sum(1 for m in result if m["keep"])
     return {
         "total": len(raw),
+        "cached": len(cached),
         "rule_dropped": rule_dropped,
         "llm_classified": len(classifications),
         "kept": kept,
