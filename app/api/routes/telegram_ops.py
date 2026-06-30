@@ -256,52 +256,62 @@ async def get_messages(
     if q:
         kwargs["search"] = q
 
-    _sender_cache: dict[int, dict] = {}
+    def _extract_sender(msg) -> dict:
+        """同步从已加载的 msg.sender 提取信息，避免额外网络请求"""
+        s = getattr(msg, "sender", None)
+        if s is None:
+            sid = msg.sender_id
+            return {"id": sid, "name": None, "username": None} if sid else {}
+        if hasattr(s, "first_name"):
+            name = " ".join(filter(None, [s.first_name or "", s.last_name or ""]))
+            return {"id": s.id, "name": name or None, "username": s.username, "type": "user",
+                    "deleted": getattr(s, "deleted", False)}
+        title = getattr(s, "title", None)
+        return {"id": s.id, "name": title, "username": getattr(s, "username", None), "type": "channel"}
 
-    async def _get_sender(msg) -> dict:
-        sid = msg.sender_id
-        if sid is None:
-            return {}
-        if sid in _sender_cache:
-            return _sender_cache[sid]
-        try:
-            sender = await msg.get_sender()
-            if sender is None:
-                info = {}
-            elif hasattr(sender, "first_name"):
-                name = " ".join(filter(None, [sender.first_name, sender.last_name]))
-                info = {"id": sender.id, "name": name, "username": sender.username, "type": "user"}
-            else:
-                info = {"id": sender.id, "name": getattr(sender, "title", ""), "username": getattr(sender, "username", None), "type": "channel"}
-            _sender_cache[sid] = info
-            return info
-        except Exception:
-            return {"id": sid}
+    def _extract_media(msg) -> str | None:
+        if msg.sticker: return "🎭 贴纸"
+        if msg.photo: return "📷 图片"
+        if msg.video: return "🎥 视频"
+        if msg.audio: return "🎵 音频"
+        if msg.document: return "📄 文件"
+        if msg.geo: return "📍 位置"
+        if msg.contact: return f"👤 联系人 {getattr(msg.contact,'first_name','')} {getattr(msg.contact,'phone_number','')}"
+        if not msg.text: return "📎 媒体"
+        return None
+
+    def _extract_fwd(msg) -> dict | None:
+        fwd = getattr(msg, "fwd_from", None)
+        if not fwd: return None
+        name = None
+        username = None
+        if fwd.from_name:
+            name = fwd.from_name
+        peer = getattr(fwd, "from_id", None)
+        if peer and hasattr(peer, "channel_id"):
+            name = name or f"频道#{peer.channel_id}"
+        return {"name": name, "date": _serialize_date(fwd.date)} if name else None
+
+    def _extract_web_preview(msg) -> dict | None:
+        wp = getattr(msg.media, "webpage", None) if msg.media else None
+        if not wp or not hasattr(wp, "url"): return None
+        return {
+            "url": wp.url,
+            "site_name": getattr(wp, "site_name", None),
+            "title": getattr(wp, "title", None),
+            "description": getattr(wp, "description", None),
+        }
 
     messages = []
     async for msg in client.iter_messages(entity, **kwargs):
-        sender = await _get_sender(msg)
-        # 媒体类型描述
-        media_type = None
-        if msg.photo:
-            media_type = "📷 图片"
-        elif msg.video:
-            media_type = "🎥 视频"
-        elif msg.sticker:
-            media_type = "🎭 贴纸"
-        elif msg.document:
-            media_type = "📄 文件"
-        elif msg.audio:
-            media_type = "🎵 音频"
-        elif not msg.text and not msg.text:
-            media_type = "📎 媒体"
-
         messages.append({
             "id": msg.id,
             "text": msg.text or "",
-            "media_type": media_type,
+            "media_type": _extract_media(msg),
+            "fwd_from": _extract_fwd(msg),
+            "web_preview": _extract_web_preview(msg),
             "date": _serialize_date(msg.date),
-            "sender": sender,
+            "sender": _extract_sender(msg),
         })
     return {"target": target, "messages": messages, "total": len(messages)}
 
@@ -411,3 +421,128 @@ async def get_participants(
             "first_name": p.first_name, "last_name": p.last_name, "bot": p.bot,
         })
     return {"target": target, "participants": participants, "total": len(participants)}
+
+
+# ── AI 消息分类过滤 ────────────────────────────
+
+import re
+import json
+import httpx
+
+_JUNK_RE = re.compile(
+    r"(加我|加群|广告|优惠|打折|兼职|刷单|日结|内部资料|培训|课程|代理|招代理"
+    r"|点击链接|免费领|限时|秒杀|抢购|转发此消息|@所有人)",
+    re.IGNORECASE,
+)
+
+_CLASSIFY_PROMPT = """你是消息价值分类器。判断每条消息对求职者是否有价值。
+
+有价值（keep=true）：招聘/求职/内推/职位/面试/Offer/薪资/HR联系/简历/行业资讯/技术干货/人脉资源
+无价值（keep=false）：闲聊/表情/广告/培训推广/刷单/水消息/纯表情或链接
+
+对每条消息返回：
+- id: 原始消息id（整数）
+- keep: true/false
+- tag: 一个标签（招聘|内推|资讯|资源|闲聊|广告|其他）
+- reason: ≤10字说明原因
+
+只返回 JSON 数组，不要其他内容。"""
+
+
+class ClassifyRequest(BaseModel):
+    target: str
+    account_id: int | None = None
+    limit: int = 100
+
+
+@router.post("/classify")
+async def classify_messages(req: ClassifyRequest):
+    from app.core.channel_config import get_channel_config
+
+    client = await _require_client(req.account_id)
+    entity = await client.get_entity(_resolve_entity_id(req.target))
+
+    # ── 1. 拉消息 ──
+    raw = []
+    async for msg in client.iter_messages(entity, limit=min(req.limit, 200)):
+        s = getattr(msg, "sender", None)
+        sender = {}
+        if s is not None:
+            if hasattr(s, "first_name"):
+                name = " ".join(filter(None, [s.first_name or "", s.last_name or ""]))
+                sender = {"id": s.id, "name": name or None, "username": s.username,
+                          "type": "user", "deleted": getattr(s, "deleted", False)}
+            else:
+                sender = {"id": s.id, "name": getattr(s, "title", None),
+                          "username": getattr(s, "username", None), "type": "channel"}
+        raw.append({"id": msg.id, "text": msg.text or "", "date": _serialize_date(msg.date), "sender": sender})
+
+    # ── 2. 规则预筛（快速丢掉明显垃圾）──
+    def rule_keep(m: dict) -> bool:
+        t = m["text"]
+        if len(t) < 10: return False
+        if _JUNK_RE.search(t): return False
+        return True
+
+    passable = [m for m in raw if rule_keep(m)]
+    rule_dropped = len(raw) - len(passable)
+
+    # ── 3. LLM 批分类 ──
+    cfg = get_channel_config("telegram")
+    api_key = cfg.get("llm_api_key", "")
+    classifications: dict[int, dict] = {}
+
+    if api_key and passable:
+        BATCH = 40
+        for i in range(0, len(passable), BATCH):
+            batch = passable[i:i + BATCH]
+            payload = [{"id": m["id"], "text": m["text"][:300]} for m in batch]
+            try:
+                async with httpx.AsyncClient(timeout=60) as http:
+                    resp = await http.post(
+                        "https://api.deepseek.com/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                        json={
+                            "model": "deepseek-chat",
+                            "messages": [
+                                {"role": "system", "content": _CLASSIFY_PROMPT},
+                                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+                            ],
+                            "temperature": 0,
+                        },
+                    )
+                    content = resp.json()["choices"][0]["message"]["content"].strip()
+                    if content.startswith("```"):
+                        content = content.split("\n", 1)[1].rsplit("```", 1)[0]
+                    items = json.loads(content)
+                    for item in items:
+                        classifications[item["id"]] = item
+            except Exception as e:
+                logger.warning("LLM classify batch %d failed: %s", i, e)
+
+    # ── 4. 合并结果 ──
+    result = []
+    for m in raw:
+        cls = classifications.get(m["id"])
+        if cls:
+            m["keep"] = cls.get("keep", True)
+            m["tag"] = cls.get("tag", "其他")
+            m["reason"] = cls.get("reason", "")
+        elif rule_keep(m):
+            m["keep"] = True
+            m["tag"] = "未分类"
+            m["reason"] = "规则通过，未经LLM"
+        else:
+            m["keep"] = False
+            m["tag"] = "垃圾"
+            m["reason"] = "规则过滤"
+        result.append(m)
+
+    kept = sum(1 for m in result if m["keep"])
+    return {
+        "total": len(raw),
+        "rule_dropped": rule_dropped,
+        "llm_classified": len(classifications),
+        "kept": kept,
+        "messages": result,
+    }
