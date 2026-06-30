@@ -305,6 +305,9 @@ async def get_messages(
             "description": getattr(wp, "description", None),
         }
 
+    # 先拿总消息数（limit=0 只返回 total，不拉消息体）
+    total_in_chat = (await client.get_messages(entity, limit=0)).total
+
     messages = []
     async for msg in client.iter_messages(entity, **kwargs):
         messages.append({
@@ -317,7 +320,15 @@ async def get_messages(
             "sender": _extract_sender(msg),
         })
     min_id = messages[-1]["id"] if messages else None
-    return {"target": target, "messages": messages, "total": len(messages), "next_offset_id": min_id}
+    has_more = min_id is not None and min_id > 1
+    return {
+        "target": target,
+        "messages": messages,
+        "loaded": len(messages),
+        "total_in_chat": total_in_chat,
+        "has_more": has_more,
+        "next_offset_id": min_id,
+    }
 
 
 # ── 用户/频道/群详情 ────────────────────────────
