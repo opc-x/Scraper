@@ -15,21 +15,36 @@ def _run_migrations():
     from app.db.connection import engine
     from app.db.schema import Base
     from sqlalchemy import text
+    import logging
+    _log = logging.getLogger(__name__)
     if not engine:
         return
-    Base.metadata.create_all(engine, checkfirst=True)
-    # 补加唯一约束（表已存在时 create_all 不会自动加）
-    with engine.begin() as conn:
-        conn.execute(text("""
-            DO $$ BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint WHERE conname = 'uq_tg_classify'
-                ) THEN
-                    ALTER TABLE tg_classify_cache
-                    ADD CONSTRAINT uq_tg_classify UNIQUE (account_id, target, msg_id);
-                END IF;
-            END $$;
-        """))
+    try:
+        Base.metadata.create_all(engine, checkfirst=True)
+    except Exception as e:
+        _log.error("create_all failed: %s", e)
+        return
+    # 补加唯一约束（表已存在时 create_all 不会加；有重复行则跳过，不崩服务）
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint WHERE conname = 'uq_tg_classify'
+                    ) THEN
+                        -- 先删重复行，保留 id 最小的
+                        DELETE FROM tg_classify_cache a USING tg_classify_cache b
+                        WHERE a.id > b.id
+                          AND a.account_id = b.account_id
+                          AND a.target = b.target
+                          AND a.msg_id = b.msg_id;
+                        ALTER TABLE tg_classify_cache
+                        ADD CONSTRAINT uq_tg_classify UNIQUE (account_id, target, msg_id);
+                    END IF;
+                END $$;
+            """))
+    except Exception as e:
+        _log.warning("Migration uq_tg_classify skipped: %s", e)
 
 
 @asynccontextmanager
