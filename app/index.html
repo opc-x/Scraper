@@ -750,17 +750,20 @@ async function tgSearch() {
 // ── 消息视图 ──
 let _chatMsgs = [];
 let _chatTarget = '';
-let _aiMode = false; // true = 只看精华
-
+let _aiMode = false;
 let _chatNextOffset = null;
 let _chatTotalInChat = null;
-let _tagFilter = null; // null = 全部，string = 只看某标签
+let _tagFilter = null;
+let _autoLoading = false;
+const AUTO_LOAD_LIMIT = 3000; // 总量 ≤ 3000 自动全拉，> 3000 手动
 
 async function openChat(target, name) {
   _chatTarget = target;
   _aiMode = false;
   _tagFilter = null;
   _chatNextOffset = null;
+  _chatTotalInChat = null;
+  _autoLoading = false;
   document.getElementById('config-title').textContent = name;
   document.getElementById('config-body').innerHTML = `
     <div class="chat-header">
@@ -782,14 +785,41 @@ async function openChat(target, name) {
     _chatTotalInChat = d.total_in_chat || null;
     renderMsgs(_chatMsgs);
     renderLoadMore();
+    // 总量 ≤ 3000 → 自动后台继续拉
+    if (_chatNextOffset && _chatTotalInChat && _chatTotalInChat <= AUTO_LOAD_LIMIT) {
+      _autoLoadAll();
+    }
   } catch(e) { document.getElementById('chat-msgs').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+async function _autoLoadAll() {
+  _autoLoading = true;
+  while (_chatNextOffset && _autoLoading) {
+    try {
+      const d = await fetch(`/api/telegram/messages?target=${encodeURIComponent(_chatTarget)}&limit=500&offset_id=${_chatNextOffset}&account_id=${_tgAcct.id}`).then(r=>r.json());
+      const newMsgs = d.messages || [];
+      _chatMsgs = [..._chatMsgs, ...newMsgs];
+      _chatNextOffset = d.has_more ? d.next_offset_id : null;
+      // 更新计数，不重渲染消息列表（避免闪烁）
+      const counter = document.getElementById('msg-counter');
+      if (counter) counter.textContent = `加载中... ${_chatMsgs.length}/${_chatTotalInChat} 条`;
+      if (!_chatNextOffset) {
+        // 全部加载完
+        _autoLoading = false;
+        renderMsgs(_chatMsgs);
+        renderLoadMore();
+      }
+    } catch(e) {
+      _autoLoading = false;
+      renderLoadMore(); // 失败了显示手动按钮
+      break;
+    }
+  }
 }
 
 function renderLoadMore() {
   const el = document.getElementById('chat-msgs');
-  const existing = document.getElementById('load-more-btn');
-  if (existing) existing.remove();
-  // 计数行
+  document.getElementById('load-more-btn')?.remove();
   const counter = document.getElementById('msg-counter');
   if (counter) {
     const total = _chatTotalInChat ? `/${_chatTotalInChat}` : '';
@@ -800,7 +830,7 @@ function renderLoadMore() {
   const btn = document.createElement('button');
   btn.id = 'load-more-btn';
   btn.className = 'btn-load-more';
-  btn.textContent = `继续加载 200 条（还有约 ${remaining} 条未读）`;
+  btn.textContent = `继续加载 500 条（还有约 ${remaining} 条）`;
   btn.onclick = loadMore;
   el.appendChild(btn);
 }
@@ -809,12 +839,8 @@ async function loadMore() {
   const btn = document.getElementById('load-more-btn');
   if (btn) { btn.disabled = true; btn.textContent = '加载中...'; }
   try {
-    const d = await fetch(`/api/telegram/messages?target=${encodeURIComponent(_chatTarget)}&limit=200&offset_id=${_chatNextOffset}&account_id=${_tgAcct.id}`).then(r=>r.json());
+    const d = await fetch(`/api/telegram/messages?target=${encodeURIComponent(_chatTarget)}&limit=500&offset_id=${_chatNextOffset}&account_id=${_tgAcct.id}`).then(r=>r.json());
     const newMsgs = d.messages || [];
-    // 合并缓存的 AI 分类
-    const map = {};
-    _chatMsgs.forEach(m => { if (m.tag) map[m.id] = {keep:m.keep,tag:m.tag,reason:m.reason}; });
-    newMsgs.forEach(m => { if (map[m.id]) Object.assign(m, map[m.id]); });
     _chatMsgs = [..._chatMsgs, ...newMsgs];
     _chatNextOffset = d.has_more ? d.next_offset_id : null;
     if (d.total_in_chat) _chatTotalInChat = d.total_in_chat;
