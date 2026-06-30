@@ -857,23 +857,42 @@ function renderTagChips() {
   if (!el) return;
   const hasTags = _chatMsgs.some(m => m.tag);
   if (!hasTags) { el.innerHTML = ''; return; }
-  // 统计每个标签数量
   const counts = {};
   _chatMsgs.forEach(m => { if (m.tag) counts[m.tag] = (counts[m.tag]||0)+1; });
-  const chips = [['全部', null], ...Object.entries(counts).sort((a,b)=>b[1]-a[1])];
+  const keptCount = _chatMsgs.filter(m => m.keep).length;
+  // 全部 | ✨精华 | 各 tag
+  const chips = [
+    {label: '全部', val: null, count: _chatMsgs.length, color: 'var(--text2)', active: !_tagFilter && !_aiMode},
+    {label: '✨ 精华', val: '__keep__', count: keptCount, color: '#22c55e', active: _aiMode && !_tagFilter},
+    ...Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([tag, cnt]) => ({
+      label: tag, val: tag, count: cnt, color: TAG_COLOR[tag]||'#6b7280', active: _tagFilter === tag
+    })),
+  ];
   el.className = 'tag-chips-row';
-  el.innerHTML = chips.map(([tag, val]) => {
-    const color = val ? (TAG_COLOR[tag]||'#6b7280') : 'var(--text2)';
-    const active = _tagFilter === val;
-    return `<button class="tag-chip ${active?'active':''}"
-      style="--tc:${color}"
-      onclick="setTagFilter(${val===null?'null':`'${tag}'`})"
-    >${tag} ${val!==null?counts[tag]:_chatMsgs.length}</button>`;
-  }).join('');
+  el.innerHTML = chips.map(({label, val, count, color, active}) =>
+    `<button class="tag-chip ${active?'active':''}" style="--tc:${color}"
+      onclick="setTagFilter(${val===null?'null':`'${val}'`})"
+    >${label} ${count}</button>`
+  ).join('');
 }
 
-function setTagFilter(tag) {
-  _tagFilter = tag;
+function setTagFilter(val) {
+  if (val === '__keep__') {
+    _aiMode = true;
+    _tagFilter = null;
+  } else {
+    _tagFilter = val;       // null = 全部，string = 某tag
+    _aiMode = false;
+  }
+  // 同步右上角按钮状态
+  const btn = document.getElementById('btn-ai');
+  if (btn) {
+    if (_aiMode) {
+      btn.textContent = '📋 全部'; btn.style.background = 'var(--green)'; btn.style.color = '#000';
+    } else {
+      btn.textContent = '✨ 精华'; btn.style.background = ''; btn.style.color = '';
+    }
+  }
   renderTagChips();
   _renderCurrentView();
 }
