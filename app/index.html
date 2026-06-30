@@ -174,6 +174,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
 .login-row input { font-size: 13px; padding: 9px 12px; }
 .btn-code { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 
+/* ── Country/city selector ── */
+.city-chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; margin-top: 8px; }
+.city-chips::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 13px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.chip.active { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+
 /* ── Modal for config ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
 .modal-overlay.show { display: block; }
@@ -199,15 +205,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
         <input id="keyword" type="text" placeholder="关键词：前端、Python..." inputmode="search">
       </div>
       <div class="search-row">
-        <select id="city" style="flex:1">
-          <option value="">全国</option>
-          <option value="深圳">深圳</option><option value="北京">北京</option><option value="上海">上海</option>
-          <option value="广州">广州</option><option value="杭州">杭州</option><option value="成都">成都</option>
-          <option value="南京">南京</option><option value="武汉">武汉</option><option value="西安">西安</option>
-          <option value="长沙">长沙</option><option value="重庆">重庆</option>
+        <select id="country" style="flex:1" onchange="onCountryChange()">
+          <option value="cn">🇨🇳 中国</option>
+          <option value="th">🇹🇭 泰国</option>
+          <option value="sg">🇸🇬 新加坡</option>
+          <option value="my">🇲🇾 马来西亚</option>
+          <option value="us">🇺🇸 美国</option>
+          <option value="remote">🌏 远程/全球</option>
         </select>
         <select id="channel" style="flex:1"></select>
       </div>
+      <div class="city-chips" id="city-chips"></div>
       <div class="search-row">
         <input id="salary_min" type="number" placeholder="最低月薪 (K)" inputmode="numeric">
         <button class="btn-fire" id="fire" onclick="doSearch()">🎯 狙击</button>
@@ -275,6 +283,40 @@ function switchTab(tab) {
   if (tab === 'config') showChannelPicker();
 }
 
+// ══ Country / City ══
+const COUNTRY_CITIES = {
+  cn: ['全国','北京','上海','深圳','广州','杭州','成都','南京','武汉','西安','长沙','重庆','苏州','厦门'],
+  th: ['全国','曼谷','清迈','芭提雅','普吉'],
+  sg: ['新加坡'],
+  my: ['全国','吉隆坡','槟城','新山'],
+  us: ['全国','旧金山','纽约','西雅图','洛杉矶','奥斯汀'],
+  remote: ['全球远程'],
+};
+let _selectedCity = '';
+
+function onCountryChange() {
+  const country = document.getElementById('country').value;
+  const cities = COUNTRY_CITIES[country] || [];
+  _selectedCity = cities[0] || '';
+  renderCityChips(cities);
+}
+
+function renderCityChips(cities) {
+  const el = document.getElementById('city-chips');
+  el.innerHTML = cities.map((c, i) =>
+    `<span class="chip ${i === 0 ? 'active' : ''}" onclick="selectCity(this, '${c}')">${c}</span>`
+  ).join('');
+}
+
+function selectCity(el, city) {
+  document.querySelectorAll('#city-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  _selectedCity = city;
+}
+
+// 初始化城市 chips
+onCountryChange();
+
 // ══ Channel select init ══
 const STATUS_LABEL = { active: '已就绪', missing_config: '待配置', disabled: '未启用' };
 let _schema = null, _cfgs = null;
@@ -307,7 +349,8 @@ async function doSearch() {
   document.getElementById('results').innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
   const chOpt = document.getElementById('channel').selectedOptions[0];
   document.getElementById('ch-stat').textContent = chOpt?.textContent?.replace(/ \(.*\)/, '') || '—';
-  const body = { keyword, city: document.getElementById('city').value, channel: document.getElementById('channel').value, salary_min: parseInt(document.getElementById('salary_min').value) || null };
+  const city = _selectedCity === '全国' || _selectedCity === '全球远程' ? '' : _selectedCity;
+  const body = { keyword, city, channel: document.getElementById('channel').value, salary_min: parseInt(document.getElementById('salary_min').value) || null };
   if (body.salary_min) body.salary_min *= 1000;
   const t0 = Date.now();
   try {
