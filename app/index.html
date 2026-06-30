@@ -879,8 +879,16 @@ function setTagFilter(tag) {
 }
 
 function _renderCurrentView(summary) {
-  let base = _aiMode ? _chatMsgs.filter(m => m.keep) : _chatMsgs;
-  if (_tagFilter) base = base.filter(m => m.tag === _tagFilter);
+  let base;
+  if (_tagFilter) {
+    // tag 筛选：全量里过滤，不受精华模式影响
+    base = _chatMsgs.filter(m => m.tag === _tagFilter);
+  } else if (_aiMode) {
+    // 精华模式：只看 keep=true
+    base = _chatMsgs.filter(m => m.keep);
+  } else {
+    base = _chatMsgs;
+  }
   const q = (document.getElementById('chat-filter')?.value||'').toLowerCase();
   if (q) base = base.filter(m => (m.text||'').toLowerCase().includes(q));
   renderMsgs(base, summary);
