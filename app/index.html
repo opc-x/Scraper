@@ -1062,13 +1062,16 @@ async function runAIFilter() {
   }
   btn.disabled = true; btn.textContent = '⏳ AI分析...';
   try {
+    // 把前端已有消息直传后端，省去 Telegram 重拉（节省 6s+）
+    const msgPayload = _chatMsgs.map(m => ({id: m.id, text: m.text || ''}));
     const res = await fetch('/api/telegram/classify', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({target: _chatTarget, account_id: _tgAcct.id, limit: _chatMsgs.length || 200}),
+      body: JSON.stringify({target: _chatTarget, account_id: _tgAcct.id, messages: msgPayload}),
     }).then(r => r.json());
+    // 后端只返回 classifications（id/keep/tag/reason），合并到 _chatMsgs
     const map = {};
-    (res.messages || []).forEach(m => { map[m.id] = m; });
+    (res.classifications || []).forEach(c => { map[c.id] = c; });
     _chatMsgs = _chatMsgs.map(m => map[m.id]
       ? {...m, keep: map[m.id].keep, tag: map[m.id].tag, reason: map[m.id].reason}
       : m);
