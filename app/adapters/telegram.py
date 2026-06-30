@@ -11,13 +11,10 @@ logger = logging.getLogger(__name__)
 
 LLM_ENDPOINTS = {
     "deepseek": "https://api.deepseek.com/v1/chat/completions",
-    "openai": "https://api.openai.com/v1/chat/completions",
 }
 
 LLM_MODELS = {
     "deepseek": "deepseek-chat",
-    "openai": "gpt-4o-mini",
-    "anthropic": "claude-sonnet-4-6-20250514",
 }
 
 EXTRACT_PROMPT = """你是一个招聘信息提取助手。从下面的聊天消息中提取职位信息。
@@ -54,16 +51,11 @@ class TelegramAdapter(BaseAdapter):
 
         messages = []
 
-        group_ids_raw = cfg.get("group_ids", "")
-        groups = [g.strip() for g in group_ids_raw.replace(",", "\n").split("\n") if g.strip()]
-        if groups:
-            msgs = await self._fetch_from_entities(client, groups, req.keyword)
-            messages.extend(msgs)
-
-        dm_ids_raw = cfg.get("dm_users", "")
-        dm_users = [u.strip() for u in dm_ids_raw.replace(",", "\n").split("\n") if u.strip()]
-        if dm_users:
-            msgs = await self._fetch_from_entities(client, dm_users, req.keyword)
+        # 统一从 sources 字段读（兼容旧 group_ids/dm_users）
+        sources_raw = cfg.get("sources") or cfg.get("group_ids", "") + "\n" + cfg.get("dm_users", "")
+        sources = [s.strip() for s in sources_raw.replace(",", "\n").split("\n") if s.strip()]
+        if sources:
+            msgs = await self._fetch_from_entities(client, sources, req.keyword)
             messages.extend(msgs)
 
         if not messages:
@@ -106,20 +98,14 @@ class TelegramAdapter(BaseAdapter):
         return messages
 
     async def _extract_jobs_with_llm(self, cfg: dict, messages: list[str]) -> list[Job]:
-        provider = cfg.get("llm_provider", "deepseek")
         api_key = cfg.get("llm_api_key", "")
-        base_url = cfg.get("llm_base_url", "")
-
         if not api_key:
             return []
 
         batch_text = "\n\n---\n\n".join(messages[:50])
 
-        if provider == "anthropic":
-            return await self._call_anthropic(api_key, base_url, batch_text)
-
-        endpoint = base_url.rstrip("/") + "/chat/completions" if base_url else LLM_ENDPOINTS.get(provider, LLM_ENDPOINTS["deepseek"])
-        model = LLM_MODELS.get(provider, "deepseek-chat")
+        endpoint = LLM_ENDPOINTS["deepseek"]
+        model = LLM_MODELS["deepseek"]
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         body = {
@@ -139,29 +125,6 @@ class TelegramAdapter(BaseAdapter):
                 return self._parse_llm_response(content)
         except Exception as e:
             logger.error("LLM call failed: %s", e)
-            return []
-
-    async def _call_anthropic(self, api_key: str, base_url: str, text: str) -> list[Job]:
-        url = (base_url.rstrip("/") or "https://api.anthropic.com") + "/v1/messages"
-        headers = {
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-        }
-        body = {
-            "model": LLM_MODELS["anthropic"],
-            "max_tokens": 4096,
-            "system": EXTRACT_PROMPT,
-            "messages": [{"role": "user", "content": text}],
-        }
-        try:
-            async with httpx.AsyncClient(timeout=60) as http:
-                res = await http.post(url, headers=headers, json=body)
-                data = res.json()
-                content = data.get("content", [{}])[0].get("text", "")
-                return self._parse_llm_response(content)
-        except Exception as e:
-            logger.error("Anthropic call failed: %s", e)
             return []
 
     def _parse_llm_response(self, content: str) -> list[Job]:
