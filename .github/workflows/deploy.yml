@@ -47,8 +47,6 @@ jobs:
       - name: Deploy to ACI
         env:
           DB_URL: ${{ secrets.DATABASE_URL }}
-          TURSO_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           OAI_KEY: ${{ secrets.OPENAI_API_KEY }}
           OAI_MODEL: ${{ secrets.OPENAI_MODEL }}
         run: |
@@ -64,8 +62,6 @@ jobs:
             --os-type Linux \
             --secure-environment-variables \
               "DATABASE_URL=$DB_URL" \
-              "TURSO_DATABASE_URL=$TURSO_URL" \
-              "TURSO_AUTH_TOKEN=$TURSO_TOKEN" \
               "OPENAI_API_KEY=$OAI_KEY" \
             --environment-variables \
               "OPENAI_MODEL=$OAI_MODEL" \
