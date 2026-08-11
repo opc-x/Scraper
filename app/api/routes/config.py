@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from app.core.channel_config import CHANNEL_SCHEMA, load_config, save_channel_config
+from app.core.channel_config import BOARDS, CHANNEL_SCHEMA, _invalidate_cache, load_config, save_channel_config
+from app.db.connection import engine
 
 router = APIRouter(prefix="/api", tags=["config"])
 
@@ -13,7 +14,7 @@ async def get_config():
 
 @router.get("/channels/schema")
 async def get_schema():
-    return {"schema": CHANNEL_SCHEMA}
+    return {"schema": CHANNEL_SCHEMA, "boards": BOARDS}
 
 
 @router.put("/channels/config")
@@ -33,4 +34,19 @@ async def update_config(body: dict):
             filtered[k] = v
 
     save_channel_config(channel, filtered)
+    return {"ok": True, "channel": channel}
+
+
+@router.delete("/channels/config/{channel}")
+async def reset_config(channel: str):
+    if channel not in CHANNEL_SCHEMA:
+        raise HTTPException(400, f"Unknown channel: {channel}")
+    if not engine:
+        raise HTTPException(503, "Database not configured")
+
+    from sqlalchemy import text
+
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM channel_configs WHERE channel = :ch"), {"ch": channel})
+    _invalidate_cache()
     return {"ok": True, "channel": channel}

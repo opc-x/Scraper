@@ -50,11 +50,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .nav-icon { font-size: 22px; line-height: 1; }
 .nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
 
-/* ── Cards ── */
+/* ── Cards / inputs ── */
 .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
 .card:last-child { margin-bottom: 0; }
-
-/* ── Search form ── */
 .search-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
 .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .search-row:last-child { margin-bottom: 0; }
@@ -79,7 +77,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
   border: none;
   border-radius: 10px;
   padding: 11px 20px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -88,25 +86,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
 }
 .btn-fire:disabled { opacity: 0.4; }
 
-/* ── Stats row ── */
-.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
-.stat-val { font-size: 20px; font-weight: 700; color: var(--green); }
-.stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
-
-/* ── Job card ── */
-.job-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
-.job-card:active { background: var(--bg3); }
-.job-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
-.job-title { font-size: 16px; font-weight: 600; line-height: 1.3; flex: 1; margin-right: 8px; }
-.job-salary { color: var(--green); font-weight: 700; font-size: 14px; white-space: nowrap; }
-.job-company { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
-.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-.tag { background: var(--bg3); color: var(--text2); padding: 3px 8px; border-radius: 6px; font-size: 11px; border: 1px solid var(--border); }
-.job-actions { display: flex; gap: 8px; justify-content: flex-end; }
+/* ── Data row (scraped record) ── */
+.data-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+.data-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 8px; }
+.data-title { font-size: 15px; font-weight: 600; line-height: 1.3; flex: 1; }
+.data-badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: var(--bg3); color: var(--text2); white-space: nowrap; }
+.data-sub { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.data-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .btn-sm { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
 .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-.btn-star { background: var(--bg3); color: var(--amber); border: 1px solid var(--border); }
+.btn-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid var(--border); }
 
 /* ── Empty / loading ── */
 .empty { text-align: center; color: var(--text3); padding: 60px 20px; font-size: 14px; }
@@ -114,10 +103,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .center-spin { display: flex; justify-content: center; padding: 40px 0; }
 
-/* ── Saved list ── */
-.saved-empty { text-align: center; color: var(--text3); padding: 60px 20px; }
+/* ── Title effect ── */
+.title-fx { background: linear-gradient(135deg, var(--green), #7dd3fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
-/* ── Channel config ── */
+/* ── Channel picker (二级手风琴：一级类目=板块，点击展开二级渠道列表) ── */
+.board-section { margin-bottom: 10px; }
+.board-section:last-child { margin-bottom: 0; }
+.board-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; padding: 12px 4px; display: flex; align-items: baseline; gap: 8px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
+.board-arrow { color: var(--green); font-size: 11px; width: 10px; display: inline-block; }
+.board-desc { font-size: 11px; font-weight: 400; color: var(--text3); }
+.board-count { margin-left: auto; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 1px 8px; border-radius: 10px; }
+.board-body { padding-top: 10px; }
 .ch-pick { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.15s; }
 .ch-pick:active { background: var(--bg3); }
 .ch-pick-info { flex: 1; }
@@ -173,255 +169,97 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
 .login-row:last-child { margin-bottom: 0; }
 .login-row input { font-size: 13px; padding: 9px 12px; }
 .btn-code { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-
-/* ── Country/city selector ── */
-.city-chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; margin-top: 8px; }
-.city-chips::-webkit-scrollbar { display: none; }
-.chip { flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 13px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-.chip.active { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
-
-/* ── Telegram ops ── */
-.tg-ops-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.tg-ops-acct { display: flex; align-items: center; gap: 8px; }
-.tg-ops-name { font-size: 16px; font-weight: 700; }
-.tg-ops-phone { font-size: 12px; color: var(--text3); }
-.btn-config-sm { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
-.tg-search { display: flex; gap: 8px; margin-bottom: 12px; }
-.tg-search input { flex: 1; font-size: 14px; }
-.btn-search-go { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-.tg-section-label { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
-/* dialog list */
-.dialog-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: background 0.15s; }
-.dialog-item:active { background: var(--bg3); }
-.dialog-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-.dialog-info { flex: 1; min-width: 0; }
-.dialog-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dialog-preview { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-.dialog-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.dialog-type { font-size: 10px; color: var(--text3); background: var(--bg3); padding: 2px 6px; border-radius: 4px; }
-.dialog-unread { background: var(--green); color: #000; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
-/* search results inline */
-.sr-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
-.sr-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.sr-info { flex: 1; min-width: 0; }
-.sr-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sr-sub { font-size: 12px; color: var(--text3); }
-.btn-into { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap; }
-.btn-into:hover { border-color: var(--green); color: var(--green); }
-/* chat / message view */
-.chat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.btn-back-chat { background: none; border: none; color: var(--text2); font-size: 24px; cursor: pointer; padding: 0 4px 0 0; line-height: 1; }
-.chat-title { font-size: 17px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chat-filter { display: flex; gap: 8px; margin-bottom: 10px; }
-.chat-filter input { flex: 1; font-size: 13px; }
-.btn-filter { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 10px; padding: 10px 14px; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.btn-ai { background: var(--green); color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-.msg-item { padding: 10px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
-.msg-item.media-only { color: var(--text3); border-style: dashed; }
-.msg-sender { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; cursor: pointer; }
-.msg-sender:hover .sender-name { text-decoration: underline; }
-.sender-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.sender-name { font-size: 12px; font-weight: 600; color: var(--green); }
-.sender-at { font-size: 11px; color: var(--text3); }
-.msg-text { font-size: 13px; line-height: 1.6; word-break: break-word; }
-.msg-media { font-size: 12px; color: var(--text3); }
-.btn-rules-inline { background: var(--bg3); border: 1px solid var(--border); color: var(--text3); border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 700; cursor: pointer; height: 38px; flex-shrink: 0; }
-.tag-chips-row { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 8px; scrollbar-width: none; }
-.tag-chips-row::-webkit-scrollbar { display: none; }
-.tag-chip { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; white-space: nowrap; transition: all .15s; }
-.tag-chip.active { background: color-mix(in srgb, var(--tc) 15%, transparent); color: var(--tc); border-color: var(--tc); }
-.btn-load-more { display: block; width: 100%; margin-top: 12px; padding: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-size: 13px; cursor: pointer; text-align: center; }
-#tag-chips { padding: 0; }
-.msg-tag-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
-.msg-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
-.msg-tag-reason { font-size: 11px; color: var(--text3); }
-.ai-summary { font-size: 12px; color: var(--green); background: rgba(34,197,94,.08); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-.ai-summary-hint { font-size: 11px; opacity: .7; }
-/* 规则图解 sheet */
-.rules-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 400; }
-.rules-overlay.show { display: flex; align-items: flex-end; }
-.rules-sheet { width: 100%; background: var(--bg2); border-radius: 20px 20px 0 0; padding: 20px 16px calc(var(--safe-bottom)+20px); max-height: 85dvh; overflow-y: auto; }
-.rules-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
-.pipeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 18px; }
-.pipe-stage { background: var(--bg3); border-radius: 10px; padding: 10px 14px; }
-.pipe-stage-title { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
-.pipe-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.pipe-chip { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: var(--bg4,#333); color: var(--text2); }
-.pipe-arrow { text-align: center; color: var(--text3); font-size: 18px; line-height: 1.4; }
-.tag-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.tag-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.tag-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.msg-fwd { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
-.msg-web-preview { margin-top: 6px; padding: 8px 10px; background: var(--bg3); border-left: 3px solid var(--blue); border-radius: 6px; }
-.wp-site { font-size: 11px; color: var(--blue); margin-bottom: 2px; }
-.wp-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.wp-desc { font-size: 12px; color: var(--text3); }
-.wp-url { font-size: 11px; color: var(--blue); word-break: break-all; }
-/* user profile sheet */
-.profile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; }
-.profile-overlay.show { display: flex; align-items: flex-end; }
-.profile-sheet { width: 100%; background: var(--bg2); border-radius: 20px 20px 0 0; padding: 20px 20px calc(var(--safe-bottom) + 20px); max-height: 80dvh; overflow-y: auto; }
-.profile-drag { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
-.profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 30px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
-.profile-name { font-size: 20px; font-weight: 700; text-align: center; }
-.profile-at { font-size: 14px; color: var(--text3); text-align: center; margin-bottom: 14px; }
-.profile-about { font-size: 13px; color: var(--text2); background: var(--bg3); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.5; }
-.profile-actions { display: flex; gap: 8px; }
-.profile-actions button { flex: 1; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); }
-.btn-view-msgs { background: var(--green); color: #000; border-color: var(--green) !important; }
-.btn-close-profile { background: var(--bg3); color: var(--text2); }
-
-/* ── Modal for config ── */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
-.modal-overlay.show { display: block; }
-.modal-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-radius: 20px 20px 0 0; max-height: 92dvh; overflow-y: auto; padding: 0 0 calc(var(--safe-bottom) + 16px); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
-.modal-overlay.show .modal-sheet { transform: translateY(0); }
-.modal-drag { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
-.modal-body { padding: 16px; }
 </style>
 </head>
 <body>
 
-<!-- ══ Screen: 狙击 ══ -->
-<div class="screen active" id="screen-search">
+<!-- ══ Screen: 渠道配置 ══ -->
+<div class="screen active" id="screen-config">
   <div class="topbar">
-    <div>
-      <div class="topbar-title"><span>Scraper</span></div>
-      <div class="topbar-sub">多渠道职位狙击</div>
-    </div>
-  </div>
-  <div class="screen-body">
-    <div class="search-card">
-      <div class="search-row">
-        <input id="keyword" type="text" placeholder="关键词：前端、Python..." inputmode="search">
-      </div>
-      <div class="search-row">
-        <select id="country" style="flex:1" onchange="onCountryChange()">
-          <option value="cn">🇨🇳 中国</option>
-          <option value="th">🇹🇭 泰国</option>
-          <option value="sg">🇸🇬 新加坡</option>
-          <option value="my">🇲🇾 马来西亚</option>
-          <option value="us">🇺🇸 美国</option>
-          <option value="remote">🌏 远程/全球</option>
-        </select>
-        <select id="channel" style="flex:1"></select>
-      </div>
-      <div class="city-chips" id="city-chips"></div>
-      <div class="search-row">
-        <input id="salary_min" type="number" placeholder="最低月薪 (K)" inputmode="numeric">
-        <button class="btn-fire" id="fire" onclick="doSearch()">🎯 狙击</button>
-      </div>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-val" id="total">—</div><div class="stat-lbl">命中职位</div></div>
-      <div class="stat-card"><div class="stat-val" id="ch-stat" style="font-size:13px;margin-top:4px">—</div><div class="stat-lbl">渠道</div></div>
-      <div class="stat-card"><div class="stat-val" id="elapsed">—</div><div class="stat-lbl">耗时</div></div>
-    </div>
-
-    <div id="results"><div class="empty">输入关键词，点击狙击 🎯</div></div>
-  </div>
-</div>
-
-<!-- ══ Screen: 收藏 ══ -->
-<div class="screen" id="screen-saved">
-  <div class="topbar">
-    <div class="topbar-title">⭐ 收藏</div>
-  </div>
-  <div class="screen-body">
-    <div id="saved-list"><div class="center-spin"><div class="spin"></div></div></div>
-  </div>
-</div>
-
-<!-- ══ Screen: 渠道 ══ -->
-<div class="screen" id="screen-config">
-  <div class="topbar">
-    <div class="topbar-title" id="config-title">渠道</div>
+    <div class="topbar-title" id="config-title">渠道配置</div>
   </div>
   <div class="screen-body" id="config-body">
     <div class="center-spin"><div class="spin"></div></div>
   </div>
 </div>
 
-<!-- ══ Bottom Nav ══ -->
-<nav class="bottom-nav">
-  <button class="nav-item active" id="nav-search" onclick="switchTab('search')">
-    <span class="nav-icon">🎯</span>
-    <span class="nav-label">狙击</span>
-  </button>
-  <button class="nav-item" id="nav-saved" onclick="switchTab('saved')">
-    <span class="nav-icon">⭐</span>
-    <span class="nav-label">收藏</span>
-  </button>
-  <button class="nav-item" id="nav-config" onclick="switchTab('config')">
-    <span class="nav-icon">📡</span>
-    <span class="nav-label">渠道</span>
-  </button>
-</nav>
+<!-- ══ Screen: 数据 ══ -->
+<div class="screen" id="screen-data">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title"><span>Scraper</span></div>
+      <div class="topbar-sub">选渠道 → 查/删数据，或触发一次抓取</div>
+    </div>
+  </div>
+  <div class="screen-body">
+    <div class="field-label" style="margin-bottom:6px">① 选择渠道</div>
+    <div class="search-row" style="margin-bottom:14px">
+      <select id="data-filter" style="flex:1" onchange="loadData()"></select>
+      <button class="btn-sm btn-ghost" onclick="loadData()" style="flex-shrink:0">刷新</button>
+    </div>
 
-<!-- User profile sheet -->
-<div class="rules-overlay" id="rulesOverlay" onclick="closeRules(event)">
-  <div class="rules-sheet" id="rulesSheet"></div>
-</div>
+    <div class="field-label" style="margin-bottom:6px">② 触发抓取（可选，验证接口用）</div>
+    <div class="search-card">
+      <div class="search-row">
+        <input id="keyword" type="text" placeholder="关键词..." inputmode="search">
+      </div>
+      <div class="search-row">
+        <select id="channel" style="flex:1"></select>
+        <input id="city" type="text" placeholder="城市（可选）" style="flex:1">
+      </div>
+      <div class="search-row">
+        <button class="btn-fire" id="fire" onclick="runSearch()" style="width:100%">执行 /api/search</button>
+      </div>
+    </div>
+    <div id="result-summary" style="font-size:12px;color:var(--text3);margin-bottom:14px"></div>
 
-<div class="profile-overlay" id="profileOverlay" onclick="closeProfile(event)">
-  <div class="profile-sheet" id="profileSheet">
-    <div class="profile-drag"></div>
-    <div id="profileContent"></div>
+    <div class="field-label" style="margin-bottom:6px">③ 数据（scraped_jobs）</div>
+    <div id="data-list"><div class="empty">选择渠道后自动加载</div></div>
   </div>
 </div>
+
+<!-- ══ Screen: 接口 ══ -->
+<div class="screen" id="screen-api">
+  <div class="topbar">
+    <div class="topbar-title">接口</div>
+  </div>
+  <div class="screen-body" style="padding:0">
+    <iframe id="api-frame" src="/docs" style="width:100%;height:calc(100dvh - var(--nav-h) - var(--safe-bottom));border:none;background:#fff"></iframe>
+  </div>
+</div>
+
+<!-- ══ Bottom Nav ══ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-config" onclick="switchTab('config')">
+    <span class="nav-icon">📡</span>
+    <span class="nav-label">渠道配置</span>
+  </button>
+  <button class="nav-item" id="nav-data" onclick="switchTab('data')">
+    <span class="nav-icon">🗄️</span>
+    <span class="nav-label">数据</span>
+  </button>
+  <button class="nav-item" id="nav-api" onclick="switchTab('api')">
+    <span class="nav-icon">🔌</span>
+    <span class="nav-label">接口</span>
+  </button>
+</nav>
 
 <script>
 // ══ PWA ══
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
 // ══ Tab switching ══
-const TABS = ['search', 'saved', 'config'];
+const TABS = ['config', 'data', 'api'];
 function switchTab(tab) {
   TABS.forEach(t => {
     document.getElementById(`screen-${t}`).classList.toggle('active', t === tab);
     document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
   });
-  if (tab === 'saved') loadSaved();
   if (tab === 'config') showChannelPicker();
+  if (tab === 'data') loadData();
 }
-
-// ══ Country / City ══
-const COUNTRY_CITIES = {
-  cn: ['全国','北京','上海','深圳','广州','杭州','成都','南京','武汉','西安','长沙','重庆','苏州','厦门'],
-  th: ['全国','曼谷','清迈','芭提雅','普吉'],
-  sg: ['新加坡'],
-  my: ['全国','吉隆坡','槟城','新山'],
-  us: ['全国','旧金山','纽约','西雅图','洛杉矶','奥斯汀'],
-  remote: ['全球远程'],
-};
-let _selectedCity = '';
-
-function onCountryChange() {
-  const country = document.getElementById('country').value;
-  const cities = COUNTRY_CITIES[country] || [];
-  _selectedCity = cities[0] || '';
-  renderCityChips(cities);
-}
-
-function renderCityChips(cities) {
-  const el = document.getElementById('city-chips');
-  el.innerHTML = cities.map((c, i) =>
-    `<span class="chip ${i === 0 ? 'active' : ''}" onclick="selectCity(this, '${c}')">${c}</span>`
-  ).join('');
-}
-
-function selectCity(el, city) {
-  document.querySelectorAll('#city-chips .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  _selectedCity = city;
-}
-
-// 初始化城市 chips
-onCountryChange();
 
 // ══ Channel select init ══
-const STATUS_LABEL = { active: '已就绪', missing_config: '待配置', disabled: '未启用' };
 let _schema = null, _cfgs = null;
 
 async function loadChannels() {
@@ -438,105 +276,128 @@ async function loadChannels() {
       sel.appendChild(o);
     });
     const active = data.channels.find(c => c.status === 'active');
-    if (active) { sel.value = active.id; document.getElementById('ch-stat').textContent = active.name; }
+    if (active) sel.value = active.id;
+
+    const filterSel = document.getElementById('data-filter');
+    filterSel.innerHTML = '<option value="">全部渠道</option>' +
+      data.channels.map(ch => `<option value="${esc(ch.id)}">${esc(ch.name)}</option>`).join('');
   } catch {}
 }
 loadChannels();
+showChannelPicker();
 
-// ══ Search ══
-async function doSearch() {
+// ══ /api/search 触发器（验证接口） ══
+async function runSearch() {
   const keyword = document.getElementById('keyword').value.trim();
   if (!keyword) return;
   const btn = document.getElementById('fire');
   btn.disabled = true;
-  document.getElementById('results').innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
-  const chOpt = document.getElementById('channel').selectedOptions[0];
-  document.getElementById('ch-stat').textContent = chOpt?.textContent?.replace(/ \(.*\)/, '') || '—';
-  const city = _selectedCity === '全国' || _selectedCity === '全球远程' ? '' : _selectedCity;
-  const body = { keyword, city, channel: document.getElementById('channel').value, salary_min: parseInt(document.getElementById('salary_min').value) || null };
-  if (body.salary_min) body.salary_min *= 1000;
+  document.getElementById('result-summary').textContent = '';
+  const city = document.getElementById('city').value.trim();
+  const body = { keyword, city, channel: document.getElementById('channel').value };
   const t0 = Date.now();
   try {
     const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
-    document.getElementById('total').textContent = data.total;
-    document.getElementById('elapsed').textContent = ((Date.now() - t0) / 1000).toFixed(1) + 's';
-    document.getElementById('results').innerHTML = data.jobs.length
-      ? data.jobs.map(jobCard).join('')
-      : '<div class="empty">没有命中，换个关键词试试</div>';
-  } catch (e) { document.getElementById('results').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    document.getElementById('result-summary').textContent = `/api/search 返回 ${data.total} 条 · 用时 ${elapsed}s · 已写入 scraped_jobs`;
+    loadData();
+  } catch (e) { document.getElementById('result-summary').textContent = `失败：${e.message}`; }
   finally { btn.disabled = false; }
 }
 
-function jobCard(j) {
-  return `<div class="job-card">
-    <div class="job-head"><div class="job-title">${esc(j.title)}</div><div class="job-salary">${esc(j.salary)}</div></div>
-    <div class="job-company">${esc(j.company)}${j.city ? ' · ' + esc(j.city) : ''}${j.experience ? ' · ' + esc(j.experience) : ''}</div>
-    ${(j.skills||[]).length ? `<div class="tags">${j.skills.slice(0,4).map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div>` : ''}
-    <div class="job-actions">
-      ${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-ghost">查看原文</button></a>` : ''}
-      <button class="btn-sm btn-star" onclick="saveJob(this, ${esc(JSON.stringify(JSON.stringify(j)))})">⭐ 收藏</button>
+// ══ scraped_jobs CRUD ══
+async function loadData() {
+  const el = document.getElementById('data-list');
+  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  const channel = document.getElementById('data-filter').value;
+  try {
+    const qs = channel ? `?channel=${encodeURIComponent(channel)}&limit=100` : '?limit=100';
+    const res = await fetch(`/api/scraped${qs}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    el.innerHTML = data.jobs.length
+      ? data.jobs.map(dataRow).join('')
+      : '<div class="empty">scraped_jobs 表暂无数据</div>';
+  } catch (e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+function dataRow(j) {
+  const sub = [j.company, j.city, j.salary, j.experience].filter(Boolean).join(' · ');
+  return `<div class="data-row">
+    <div class="data-head"><div class="data-title">${esc(j.title)}</div><span class="data-badge">${esc(j.channel)}</span></div>
+    <div class="data-sub">${esc(sub)}</div>
+    <div class="data-actions">
+      ${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-ghost">原文</button></a>` : ''}
+      <button class="btn-sm btn-danger" onclick="deleteData(${j.id}, this)">删除</button>
     </div>
   </div>`;
 }
 
-async function saveJob(el, jobJson) {
+async function deleteData(id, el) {
+  if (!confirm('确定删除这条记录？')) return;
   try {
-    const res = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: jobJson });
-    el.textContent = res.ok ? '✅ 已收藏' : ((await res.json()).detail === 'Job already saved' ? '✅ 已收藏' : '❌ 失败');
-    el.disabled = true;
-  } catch { el.textContent = '❌ 失败'; }
+    const res = await fetch(`/api/scraped/${id}`, { method: 'DELETE' });
+    if (res.ok) el.closest('.data-row').remove();
+  } catch {}
 }
 
-// ══ Saved jobs ══
-async function loadSaved() {
-  const el = document.getElementById('saved-list');
-  el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
-  try {
-    const res = await fetch('/api/saved');
-    const data = await res.json();
-    if (!data.jobs.length) { el.innerHTML = '<div class="saved-empty">暂无收藏</div>'; return; }
-    el.innerHTML = data.jobs.map(j => {
-      const job = { title: j.title, company: j.company, salary: j.salary, city: j.city, experience: j.experience, skills: j.skills || [], url: j.url || '', education: j.education || '' };
-      return jobCard(job);
-    }).join('');
-  } catch (e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
-}
+// ══ Channel config — Step 1: picker（按板块分组，一个板块对应一个下游 app） ══
+let _boards = null;
 
-// ══ Channel config — Step 1: picker ══
 async function showChannelPicker() {
-  document.getElementById('config-title').textContent = '渠道';
+  document.getElementById('config-title').innerHTML = '<span class="title-fx">渠道配置</span>';
   const body = document.getElementById('config-body');
   body.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
   try {
     const [sr, cr] = await Promise.all([fetch('/api/channels/schema').then(r=>r.json()), fetch('/api/channels/config').then(r=>r.json())]);
-    _schema = sr.schema; _cfgs = cr.channels;
-    body.innerHTML = Object.entries(_schema).map(([id, s]) => {
-      const cfg = _cfgs[id] || {};
-      const en = cfg.enabled ?? false;
-      const filled = s.fields.filter(f=>f.required).every(f=>!!cfg[f.key]);
-      const status = en && filled ? 'active' : en ? 'missing' : 'off';
-      const badge = en && filled ? '已就绪' : en ? '待配置' : '未启用';
-      return `<div class="ch-pick" onclick="showChannelDetail('${id}')">
-        <div class="ch-pick-info"><div class="ch-pick-name">${esc(s.name)}</div><div class="ch-pick-desc">${esc(s.description)}</div></div>
-        <div class="ch-pick-right"><span class="badge ${status}">${badge}</span><span class="ch-arrow">›</span></div>
+    _schema = sr.schema; _cfgs = cr.channels; _boards = sr.boards || {};
+
+    const byBoard = {};
+    Object.entries(_schema).forEach(([id, s]) => {
+      const b = s.board || '_';
+      (byBoard[b] = byBoard[b] || []).push([id, s]);
+    });
+
+    body.innerHTML = Object.entries(_boards).map(([boardId, board]) => {
+      const items = byBoard[boardId] || [];
+      const list = items.length
+        ? items.map(([id, s]) => channelPickRow(id, s)).join('')
+        : '<div class="empty" style="padding:20px">暂无渠道</div>';
+      return `<div class="board-section">
+        <div class="board-title" onclick="toggleBoard('${boardId}')">
+          <span class="board-arrow" id="ba-${boardId}">▸</span>
+          ${esc(board.name)}<span class="board-desc">${esc(board.desc||'')}</span>
+          <span class="board-count">${items.length}</span>
+        </div>
+        <div class="board-body" id="bb-${boardId}" style="display:none">${list}</div>
       </div>`;
     }).join('');
   } catch (e) { body.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
-// ══ Channel config — Step 2: detail ══
-async function showChannelDetail(chId) {
-  // Telegram 已登录 → 直接进操作页
-  if (chId === 'telegram') {
-    const accts = await fetch('/api/telegram/accounts').then(r=>r.json()).catch(()=>({accounts:[]}));
-    const loggedIn = accts.accounts?.some(a => a.has_session && a.is_active);
-    if (loggedIn) { showTgOps(accts.accounts[0]); return; }
-  }
-  showChannelConfig(chId);
+function toggleBoard(boardId) {
+  const bodyEl = document.getElementById(`bb-${boardId}`);
+  const arrow = document.getElementById(`ba-${boardId}`);
+  const open = bodyEl.style.display !== 'none';
+  bodyEl.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▸' : '▾';
 }
 
+function channelPickRow(id, s) {
+  const cfg = _cfgs[id] || {};
+  const en = cfg.enabled ?? false;
+  const filled = s.fields.filter(f=>f.required).every(f=>!!cfg[f.key]);
+  const status = en && filled ? 'active' : en ? 'missing' : 'off';
+  const badge = en && filled ? '已就绪' : en ? '待配置' : '未启用';
+  return `<div class="ch-pick" onclick="showChannelConfig('${id}')">
+    <div class="ch-pick-info"><div class="ch-pick-name">${esc(s.name)}</div><div class="ch-pick-desc">${esc(s.description)}</div></div>
+    <div class="ch-pick-right"><span class="badge ${status}">${badge}</span><span class="ch-arrow">›</span></div>
+  </div>`;
+}
+
+// ══ Channel config — Step 2: detail (增删改查) ══
 function showChannelConfig(chId) {
   const s = _schema[chId], cfg = _cfgs[chId] || {}, en = cfg.enabled ?? false;
   document.getElementById('config-title').textContent = s.name;
@@ -547,6 +408,7 @@ function showChannelConfig(chId) {
     <label class="toggle"><input type="checkbox" id="en-${chId}" ${en?'checked':''}><div class="toggle-track"></div><span class="toggle-label">启用</span></label>
     <div style="display:flex;align-items:center;gap:8px">
       <span class="toast" id="toast-${chId}"></span>
+      <button class="btn-sm btn-danger" onclick="resetChannel('${chId}')">重置</button>
       <button class="btn-save" onclick="saveChannel('${chId}')">保存</button>
     </div>
   </div>`;
@@ -570,20 +432,20 @@ async function saveChannel(chId) {
   document.querySelectorAll(`[id^="f-${chId}-"]`).forEach(el => { payload[el.id.replace(`f-${chId}-`, '')] = el.value.trim(); });
   try {
     const res = await fetch('/api/channels/config', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    if (res.ok) {
-      toast.className='toast ok'; toast.textContent='✅ 已保存'; loadChannels();
-      if (chId === 'telegram') {
-        setTimeout(async () => {
-          const accts = await fetch('/api/telegram/accounts').then(r=>r.json()).catch(()=>({accounts:[]}));
-          const loggedIn = accts.accounts?.some(a => a.has_session && a.is_active);
-          if (loggedIn) showTgOps(accts.accounts.find(a=>a.has_session));
-        }, 600);
-      }
-    } else { const d=await res.json(); toast.className='toast err'; toast.textContent='❌ '+(d.detail||'失败'); }
-  } catch(e) { toast.className='toast err'; toast.textContent='❌ '+e.message; }
+    if (res.ok) { toast.className='toast ok'; toast.textContent='已保存'; loadChannels(); }
+    else { const d=await res.json(); toast.className='toast err'; toast.textContent=d.detail||'失败'; }
+  } catch(e) { toast.className='toast err'; toast.textContent=e.message; }
 }
 
-// ══ Telegram accounts ══
+async function resetChannel(chId) {
+  if (!confirm('确定重置该渠道配置？')) return;
+  try {
+    const res = await fetch(`/api/channels/config/${chId}`, { method: 'DELETE' });
+    if (res.ok) { loadChannels(); showChannelPicker(); }
+  } catch {}
+}
+
+// ══ Telegram accounts（渠道配置的一部分，增删改查） ══
 function tgAccountsSection() {
   return `<div class="tg-section">
     <div class="tg-section-title">📱 Telegram 账号</div>
@@ -630,9 +492,9 @@ async function tgAdd() {
   if (!label||!phone||!api_id||!api_hash){t.className='toast err';t.textContent='请填完所有字段';return;}
   try {
     const d = await fetch('/api/telegram/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,phone,api_id,api_hash})}).then(r=>r.json());
-    if (d.ok){t.className='toast ok';t.textContent='✅ '+d.message;['tg-label','tg-phone','tg-aid','tg-ahash'].forEach(i=>document.getElementById(i).value='');loadTgAccounts();}
-    else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
-  }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
+    if (d.ok){t.className='toast ok';t.textContent=d.message;['tg-label','tg-phone','tg-aid','tg-ahash'].forEach(i=>document.getElementById(i).value='');loadTgAccounts();}
+    else{t.className='toast err';t.textContent=d.detail||'失败';}
+  }catch(e){t.className='toast err';t.textContent=e.message;}
 }
 
 async function tgDel(id){if(!confirm('确定删除？'))return;await fetch(`/api/telegram/accounts/${id}`,{method:'DELETE'});loadTgAccounts();}
@@ -642,491 +504,24 @@ async function tgSend(id){
   const t=document.getElementById(`lt-${id}`);t.textContent='发送中...';
   try{const d=await fetch(`/api/telegram/accounts/${id}/send-code`,{method:'POST'}).then(r=>r.json());
     if(d.ok){t.className='toast ok';t.textContent=d.message;document.getElementById(`cr-${id}`).style.display='flex';}
-    else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
-  }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
+    else{t.className='toast err';t.textContent=d.detail||'失败';}
+  }catch(e){t.className='toast err';t.textContent=e.message;}
 }
 
 async function tgVerify(id){
   const code=v(`code-${id}`), pw=v(`2fa-${id}`), t=document.getElementById(`lt-${id}`);
   if(!code){t.className='toast err';t.textContent='请输入验证码';return;}
   try{const d=await fetch(`/api/telegram/accounts/${id}/verify-code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,password:pw})}).then(r=>r.json());
-    if(d.ok){t.className='toast ok';t.textContent='✅ 登录成功';setTimeout(async()=>{const accts=await fetch('/api/telegram/accounts').then(r=>r.json());const a=accts.accounts?.find(x=>x.has_session);if(a)showTgOps(a);},500);}
+    if(d.ok){t.className='toast ok';t.textContent='登录成功';loadTgAccounts();}
     else if(d.need_2fa){document.getElementById(`2fa-${id}`).style.display='block';t.className='toast err';t.textContent='需要两步验证密码';}
-    else{t.className='toast err';t.textContent='❌ '+(d.detail||'失败');}
-  }catch(e){t.className='toast err';t.textContent='❌ '+e.message;}
-}
-
-// ══ Telegram 操作页 ══
-let _tgAcct = null;
-let _tgDialogs = [];
-
-function showTgOps(acct) {
-  _tgAcct = acct;
-  document.getElementById('config-title').textContent = 'Telegram';
-  renderTgOpsMain();
-}
-
-function renderTgOpsMain() {
-  document.getElementById('config-body').innerHTML = `
-    <div class="tg-ops-header">
-      <div class="tg-ops-acct">
-        <span class="dot g"></span>
-        <div><div class="tg-ops-name">${esc(_tgAcct.label)}</div><div class="tg-ops-phone">${esc(_tgAcct.phone)}</div></div>
-      </div>
-      <button class="btn-config-sm" onclick="showChannelConfig('telegram')">⚙ 配置</button>
-    </div>
-    <div class="tg-search">
-      <input id="tg-q" type="text" placeholder="搜 @用户名 或关键词..." inputmode="search">
-      <button class="btn-search-go" onclick="tgSearch()">搜</button>
-    </div>
-    <div id="tg-sr" style="display:none;margin-bottom:10px"></div>
-    <div class="tg-section-label">对话列表</div>
-    <div id="tg-dialogs"><div class="center-spin"><div class="spin"></div></div></div>
-  `;
-  document.getElementById('tg-q').addEventListener('keydown', e => { if(e.key==='Enter') tgSearch(); });
-  loadDialogs();
-}
-
-async function loadDialogs() {
-  const el = document.getElementById('tg-dialogs');
-  try {
-    const d = await fetch(`/api/telegram/dialogs?limit=100&account_id=${_tgAcct.id}`).then(r=>r.json());
-    _tgDialogs = d.dialogs || [];
-    if (!_tgDialogs.length) { el.innerHTML = '<div class="empty">暂无对话</div>'; return; }
-    el.innerHTML = _tgDialogs.map(dlg => dialogRow(dlg)).join('');
-  } catch(e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
-}
-
-function dialogRow(dlg) {
-  const icon = dlg.type==='channel'?'📢':dlg.type==='group'?'👥':'👤';
-  const typeLabel = dlg.type==='channel'?'频道':dlg.type==='group'?'群组':'私聊';
-  const target = dlg.username || String(dlg.id);
-  return `<div class="dialog-item" onclick="openChat('${esc(target)}','${esc(dlg.name)}')">
-    <div class="dialog-avatar">${icon}</div>
-    <div class="dialog-info">
-      <div class="dialog-name">${esc(dlg.name)}</div>
-      <div class="dialog-preview">${esc(dlg.last_message||'')}</div>
-    </div>
-    <div class="dialog-right">
-      <span class="dialog-type">${typeLabel}</span>
-      ${dlg.unread_count>0?`<span class="dialog-unread">${dlg.unread_count}</span>`:''}
-    </div>
-  </div>`;
-}
-
-async function tgSearch() {
-  const q = v('tg-q');
-  if (!q) return;
-  const srEl = document.getElementById('tg-sr');
-  srEl.style.display = 'block';
-  srEl.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
-  try {
-    const d = await fetch(`/api/telegram/search/global?q=${encodeURIComponent(q)}&account_id=${_tgAcct.id}`).then(r=>r.json());
-    const items = [
-      ...(d.users||[]).map(u => {
-        const name = [u.first_name,u.last_name].filter(Boolean).join(' ');
-        const sub = (u.username?'@'+u.username:'') + (u.bot?' · Bot':'');
-        return `<div class="sr-item">
-          <div class="sr-avatar">${(name[0]||'?').toUpperCase()}</div>
-          <div class="sr-info"><div class="sr-name">${esc(name)}</div><div class="sr-sub">${esc(sub)}</div></div>
-          ${u.username?`<button class="btn-into" onclick="openChat('${esc(u.username)}','${esc(name)}')">进入</button>`:''}
-        </div>`;
-      }),
-      ...(d.chats||[]).map(c => {
-        const sub = (c.username?'@'+c.username:'')+(c.participants_count?' · '+c.participants_count+'人':'');
-        return `<div class="sr-item">
-          <div class="sr-avatar" style="background:var(--bg3);color:var(--text2);font-size:18px">${c.type==='channel'?'📢':'👥'}</div>
-          <div class="sr-info"><div class="sr-name">${esc(c.title)}</div><div class="sr-sub">${esc(sub)}</div></div>
-          ${c.username?`<button class="btn-into" onclick="openChat('${esc(c.username)}','${esc(c.title)}')">进入</button>`:''}
-        </div>`;
-      }),
-    ];
-    srEl.innerHTML = items.length
-      ? `<div class="tg-section-label">搜索结果</div>${items.join('')}`
-      : `<div style="font-size:13px;color:var(--text3);padding:8px 0">没有找到 "${esc(q)}"</div>`;
-  } catch(e) { srEl.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
-}
-
-// ── 消息视图 ──
-let _chatMsgs = [];
-let _chatTarget = '';
-let _aiMode = false;
-let _chatNextOffset = null;
-let _chatTotalInChat = null;
-let _tagFilter = null;
-let _autoLoading = false;
-const AUTO_LOAD_LIMIT = 3000; // 总量 ≤ 3000 自动全拉，> 3000 手动
-
-async function openChat(target, name) {
-  _chatTarget = target;
-  _aiMode = false;
-  _tagFilter = null;
-  _chatNextOffset = null;
-  _chatTotalInChat = null;
-  _autoLoading = false;
-  document.getElementById('config-title').textContent = name;
-  document.getElementById('config-body').innerHTML = `
-    <div class="chat-header">
-      <button class="btn-back-chat" onclick="showTgOps(_tgAcct)">‹</button>
-      <div class="chat-title">${esc(name)}</div>
-    </div>
-    <div class="chat-filter">
-      <input type="text" id="chat-filter" placeholder="关键词过滤..." oninput="filterMsgs()">
-      <button class="btn-rules-inline" onclick="showRules()" title="过滤规则">?</button>
-      <button class="btn-ai" id="btn-ai" onclick="runAIFilter()">✨ 精华</button>
-    </div>
-    <div id="tag-chips"></div>
-    <div id="chat-msgs"><div class="center-spin"><div class="spin"></div></div></div>
-  `;
-  try {
-    const d = await fetch(`/api/telegram/messages?target=${encodeURIComponent(target)}&limit=200&account_id=${_tgAcct.id}`).then(r=>r.json());
-    _chatMsgs = d.messages || [];
-    _chatNextOffset = d.has_more ? d.next_offset_id : null;
-    _chatTotalInChat = d.total_in_chat || null;
-    renderMsgs(_chatMsgs);
-    renderLoadMore();
-    // 总量 ≤ 3000 → 自动后台继续拉
-    if (_chatNextOffset && _chatTotalInChat && _chatTotalInChat <= AUTO_LOAD_LIMIT) {
-      _autoLoadAll();
-    }
-  } catch(e) { document.getElementById('chat-msgs').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
-}
-
-async function _autoLoadAll() {
-  _autoLoading = true;
-  while (_chatNextOffset && _autoLoading) {
-    try {
-      const d = await fetch(`/api/telegram/messages?target=${encodeURIComponent(_chatTarget)}&limit=500&offset_id=${_chatNextOffset}&account_id=${_tgAcct.id}`).then(r=>r.json());
-      const newMsgs = d.messages || [];
-      _chatMsgs = [..._chatMsgs, ...newMsgs];
-      _chatNextOffset = d.has_more ? d.next_offset_id : null;
-      // 更新计数，不重渲染消息列表（避免闪烁）
-      const counter = document.getElementById('msg-counter');
-      if (counter) counter.textContent = `加载中... ${_chatMsgs.length}/${_chatTotalInChat} 条`;
-      if (!_chatNextOffset) {
-        // 全部加载完
-        _autoLoading = false;
-        renderMsgs(_chatMsgs);
-        renderLoadMore();
-      }
-    } catch(e) {
-      _autoLoading = false;
-      renderLoadMore(); // 失败了显示手动按钮
-      break;
-    }
-  }
-}
-
-function renderLoadMore() {
-  const el = document.getElementById('chat-msgs');
-  document.getElementById('load-more-btn')?.remove();
-  const counter = document.getElementById('msg-counter');
-  if (counter) {
-    const total = _chatTotalInChat ? `/${_chatTotalInChat}` : '';
-    counter.textContent = `已加载 ${_chatMsgs.length}${total} 条`;
-  }
-  if (!_chatNextOffset) return;
-  const remaining = _chatTotalInChat ? _chatTotalInChat - _chatMsgs.length : '更多';
-  const btn = document.createElement('button');
-  btn.id = 'load-more-btn';
-  btn.className = 'btn-load-more';
-  btn.textContent = `继续加载 500 条（还有约 ${remaining} 条）`;
-  btn.onclick = loadMore;
-  el.appendChild(btn);
-}
-
-async function loadMore() {
-  const btn = document.getElementById('load-more-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '加载中...'; }
-  try {
-    const d = await fetch(`/api/telegram/messages?target=${encodeURIComponent(_chatTarget)}&limit=500&offset_id=${_chatNextOffset}&account_id=${_tgAcct.id}`).then(r=>r.json());
-    const newMsgs = d.messages || [];
-    _chatMsgs = [..._chatMsgs, ...newMsgs];
-    _chatNextOffset = d.has_more ? d.next_offset_id : null;
-    if (d.total_in_chat) _chatTotalInChat = d.total_in_chat;
-    renderTagChips();
-    _renderCurrentView();
-    renderLoadMore();
-  } catch(e) { if (btn) { btn.disabled=false; btn.textContent='加载更多'; } }
-}
-
-const TAG_COLOR = {招聘:'#22c55e',内推:'#3b82f6',资讯:'#a78bfa',资源:'#f59e0b',闲聊:'#6b7280',广告:'#ef4444',垃圾:'#ef4444',其他:'#6b7280',未分类:'#6b7280'};
-
-function renderTagChips() {
-  const el = document.getElementById('tag-chips');
-  if (!el) return;
-  const hasTags = _chatMsgs.some(m => m.tag);
-  if (!hasTags) { el.innerHTML = ''; return; }
-  const counts = {};
-  _chatMsgs.forEach(m => { if (m.tag) counts[m.tag] = (counts[m.tag]||0)+1; });
-  const keptCount = _chatMsgs.filter(m => m.keep).length;
-  // 全部 | ✨精华 | 各 tag
-  const chips = [
-    {label: '全部', val: null, count: _chatMsgs.length, color: 'var(--text2)', active: !_tagFilter && !_aiMode},
-    {label: '✨ 精华', val: '__keep__', count: keptCount, color: '#22c55e', active: _aiMode && !_tagFilter},
-    ...Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([tag, cnt]) => ({
-      label: tag, val: tag, count: cnt, color: TAG_COLOR[tag]||'#6b7280', active: _tagFilter === tag
-    })),
-  ];
-  el.className = 'tag-chips-row';
-  el.innerHTML = chips.map(({label, val, count, color, active}) =>
-    `<button class="tag-chip ${active?'active':''}" style="--tc:${color}"
-      onclick="setTagFilter(${val===null?'null':`'${val}'`})"
-    >${label} ${count}</button>`
-  ).join('');
-}
-
-function setTagFilter(val) {
-  if (val === '__keep__') {
-    _aiMode = true;
-    _tagFilter = null;
-  } else {
-    _tagFilter = val;       // null = 全部，string = 某tag
-    _aiMode = false;
-  }
-  // 同步右上角按钮状态
-  const btn = document.getElementById('btn-ai');
-  if (btn) {
-    if (_aiMode) {
-      btn.textContent = '📋 全部'; btn.style.background = 'var(--green)'; btn.style.color = '#000';
-    } else {
-      btn.textContent = '✨ 精华'; btn.style.background = ''; btn.style.color = '';
-    }
-  }
-  renderTagChips();
-  _renderCurrentView();
-}
-
-function _renderCurrentView(summary) {
-  let base;
-  if (_tagFilter) {
-    // tag 筛选：全量里过滤，不受精华模式影响
-    base = _chatMsgs.filter(m => m.tag === _tagFilter);
-  } else if (_aiMode) {
-    // 精华模式：只看 keep=true
-    base = _chatMsgs.filter(m => m.keep);
-  } else {
-    base = _chatMsgs;
-  }
-  const q = (document.getElementById('chat-filter')?.value||'').toLowerCase();
-  if (q) base = base.filter(m => (m.text||'').toLowerCase().includes(q));
-  renderMsgs(base, summary);
-}
-
-function renderMsgs(msgs, summary) {
-  const el = document.getElementById('chat-msgs');
-  if (!msgs.length) { el.innerHTML = '<div class="empty">暂无消息</div>'; renderLoadMore(); return; }
-  const totalStr = _chatTotalInChat ? `/${_chatTotalInChat}` : '';
-  const header = summary
-    ? `<div class="ai-summary"><span>${summary}</span></div><div id="msg-counter" style="font-size:11px;color:var(--text3);margin-bottom:6px">已加载 ${_chatMsgs.length}${totalStr} 条</div>`
-    : `<div id="msg-counter" style="font-size:11px;color:var(--text3);margin-bottom:6px">已加载 ${_chatMsgs.length}${totalStr} 条</div>`;
-  el.innerHTML = header + msgs.map(m => msgItem(m)).join('');
-  renderLoadMore();
-}
-
-function msgItem(m) {
-  const s = m.sender || {};
-  const isDeleted = s.deleted;
-  const name = isDeleted ? '已注销账号' : (s.name || '');
-  const at = s.username ? '@' + s.username : '';
-  const initial = isDeleted ? '👻' : (name[0] || '?').toUpperCase();
-  const senderTarget = s.username || (s.id && !isDeleted ? String(s.id) : '');
-
-  // 发送人行
-  let senderHtml = '';
-  if (s.id || s.name) {
-    const click = senderTarget && !isDeleted
-      ? `onclick="showUserProfile('${esc(senderTarget)}','${esc(name)}')"` : '';
-    senderHtml = `<div class="msg-sender" ${click} style="${isDeleted?'cursor:default':''}">
-      <div class="sender-avatar" style="${isDeleted?'background:var(--bg3);color:var(--text3)':''}">${initial}</div>
-      <span class="sender-name" style="${isDeleted?'color:var(--text3)':''}">${esc(name)}</span>
-      ${at ? `<span class="sender-at">${esc(at)}</span>` : ''}
-    </div>`;
-  }
-
-  // 转发信息
-  let fwdHtml = '';
-  if (m.fwd_from) {
-    fwdHtml = `<div class="msg-fwd">↩ 转发自 ${esc(m.fwd_from.name || '')}</div>`;
-  }
-
-  // 正文
-  let contentHtml = '';
-  if (m.text) {
-    contentHtml = `<div class="msg-text">${esc(m.text)}</div>`;
-  } else if (m.media_type) {
-    contentHtml = `<div class="msg-media">${esc(m.media_type)}</div>`;
-  }
-
-  // Web 预览
-  let wpHtml = '';
-  const wp = m.web_preview;
-  if (wp) {
-    wpHtml = `<div class="msg-web-preview">
-      ${wp.site_name ? `<div class="wp-site">${esc(wp.site_name)}</div>` : ''}
-      ${wp.title ? `<div class="wp-title">${esc(wp.title)}</div>` : ''}
-      ${wp.description ? `<div class="wp-desc">${esc(wp.description)}</div>` : ''}
-      <div class="wp-url">${esc(wp.url)}</div>
-    </div>`;
-  }
-
-  // AI tag 徽章 + reason
-  let tagHtml = '';
-  if (m.tag) {
-    const color = TAG_COLOR[m.tag] || '#6b7280';
-    tagHtml = `<div class="msg-tag-row">
-      <span class="msg-tag" style="background:${color}22;color:${color};border-color:${color}44">${esc(m.tag)}</span>
-      ${m.reason ? `<span class="msg-tag-reason">${esc(m.reason)}</span>` : ''}
-    </div>`;
-  }
-
-  const isEmpty = !m.text && !m.media_type;
-  return `<div class="msg-item ${isEmpty?'media-only':''}">${senderHtml}${tagHtml}${fwdHtml}${contentHtml}${wpHtml}</div>`;
-}
-
-// ── 用户资料卡 ──
-async function showUserProfile(target, name) {
-  const overlay = document.getElementById('profileOverlay');
-  const content = document.getElementById('profileContent');
-  overlay.classList.add('show');
-  content.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
-  try {
-    const d = await fetch(`/api/telegram/user?target=${encodeURIComponent(target)}&account_id=${_tgAcct.id}`).then(r=>r.json());
-    const displayName = d.first_name ? [d.first_name, d.last_name].filter(Boolean).join(' ') : (d.title || name);
-    const initial = (displayName[0] || '?').toUpperCase();
-    const at = d.username ? '@' + d.username : '';
-    content.innerHTML = `
-      <div class="profile-avatar">${initial}</div>
-      <div class="profile-name">${esc(displayName)}</div>
-      <div class="profile-at">${esc(at)}</div>
-      ${d.about ? `<div class="profile-about">${esc(d.about)}</div>` : ''}
-      ${d.participants_count ? `<div style="text-align:center;font-size:13px;color:var(--text3);margin-bottom:12px">${d.participants_count.toLocaleString()} 成员</div>` : ''}
-      <div class="profile-actions">
-        ${(d.username||target) ? `<button class="btn-view-msgs" onclick="closeProfile();openChat('${esc(d.username||target)}','${esc(displayName)}')">查看消息</button>` : ''}
-        <button class="btn-close-profile" onclick="closeProfile()">关闭</button>
-      </div>
-    `;
-  } catch(e) {
-    content.innerHTML = `<div class="empty">${esc(e.message)}</div><div class="profile-actions"><button class="btn-close-profile" onclick="closeProfile()">关闭</button></div>`;
-  }
-}
-
-function closeProfile(e) {
-  if (e && e.target !== document.getElementById('profileOverlay')) return;
-  document.getElementById('profileOverlay').classList.remove('show');
-}
-
-// ── 规则图解 ──
-const TAG_DESC = {
-  招聘: '岗位/职位/JD', 内推: '内部推荐机会', 资讯: '行业动态/政策',
-  资源: '工具/资料/福利', 闲聊: '日常聊天', 广告: '推广/培训/刷单', 其他: '未归类内容',
-};
-
-function showRules() {
-  const sheet = document.getElementById('rulesSheet');
-  const JUNK_WORDS = ['加我','加群','广告','优惠','打折','兼职','刷单','日结','内部资料','培训','课程','代理','招代理','点击链接','免费领','限时','秒杀','抢购','转发此消息'];
-  const tagLegend = Object.entries(TAG_COLOR)
-    .filter(([t]) => t !== '垃圾' && t !== '未分类')
-    .map(([tag, color]) => `<div class="tag-legend-item">
-      <div class="tag-dot" style="background:${color}"></div>
-      <div><div style="font-weight:600;font-size:13px">${tag}</div><div style="font-size:11px;color:var(--text3)">${TAG_DESC[tag]||''}</div></div>
-    </div>`).join('');
-
-  sheet.innerHTML = `
-    <div class="rules-title">🔍 过滤规则说明</div>
-    <div class="pipeline">
-      <div class="pipe-stage">
-        <div class="pipe-stage-title">① 规则层（瞬时，免费）</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:8px">命中以下任一 → 直接丢弃</div>
-        <div class="pipe-chips">
-          <span class="pipe-chip" style="background:rgba(239,68,68,.12);color:#ef4444">字数 &lt; 10</span>
-          ${JUNK_WORDS.map(w=>`<span class="pipe-chip" style="background:rgba(239,68,68,.12);color:#ef4444">${w}</span>`).join('')}
-        </div>
-      </div>
-      <div class="pipe-arrow">↓</div>
-      <div class="pipe-stage">
-        <div class="pipe-stage-title">② LLM层（DeepSeek · 约0.01元/百条）</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:8px">逐条理解语义 → 打标签 + 判断是否保留</div>
-        <div class="pipe-chips">
-          <span class="pipe-chip" style="background:rgba(34,197,94,.12);color:#22c55e">keep=true → 精华</span>
-          <span class="pipe-chip" style="background:rgba(239,68,68,.12);color:#ef4444">keep=false → 过滤</span>
-        </div>
-      </div>
-    </div>
-    <div class="rules-title" style="font-size:14px">🏷️ 标签说明</div>
-    <div class="tag-legend">${tagLegend}</div>
-    <div style="margin-top:16px">
-      <button style="width:100%;padding:12px;background:var(--bg3);border:none;border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer" onclick="closeRules()">关闭</button>
-    </div>
-  `;
-  document.getElementById('rulesOverlay').classList.add('show');
-}
-
-function closeRules(e) {
-  if (e && e.target !== document.getElementById('rulesOverlay')) return;
-  document.getElementById('rulesOverlay').classList.remove('show');
-}
-
-function filterMsgs() {
-  _renderCurrentView();
-}
-
-async function runAIFilter() {
-  const btn = document.getElementById('btn-ai');
-  if (_aiMode) {
-    _aiMode = false;
-    btn.textContent = '✨ 精华';
-    btn.style.background = '';
-    btn.style.color = '';
-    _renderCurrentView();
-    return;
-  }
-  // 已有缓存分类 → 直接切换
-  if (_chatMsgs.some(m => m.tag !== undefined)) {
-    _aiMode = true;
-    _applyAIMode(btn);
-    return;
-  }
-  btn.disabled = true; btn.textContent = '⏳ AI分析...';
-  try {
-    // 把前端已有消息直传后端，省去 Telegram 重拉（节省 6s+）
-    const msgPayload = _chatMsgs.map(m => ({id: m.id, text: m.text || ''}));
-    const res = await fetch('/api/telegram/classify', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({target: _chatTarget, account_id: _tgAcct.id, messages: msgPayload}),
-    }).then(r => r.json());
-    // 后端只返回 classifications（id/keep/tag/reason），合并到 _chatMsgs
-    const map = {};
-    (res.classifications || []).forEach(c => { map[c.id] = c; });
-    _chatMsgs = _chatMsgs.map(m => map[m.id]
-      ? {...m, keep: map[m.id].keep, tag: map[m.id].tag, reason: map[m.id].reason}
-      : m);
-    _aiMode = true;
-    _applyAIMode(btn, res);
-  } catch(e) {
-    document.getElementById('chat-msgs').innerHTML = `<div class="empty">AI分析失败: ${esc(e.message)}</div>`;
-    btn.disabled = false; btn.textContent = '✨ 精华';
-  }
-}
-
-function _applyAIMode(btn, res) {
-  btn.disabled = false;
-  btn.textContent = '📋 全部';
-  btn.style.background = 'var(--green)';
-  btn.style.color = '#000';
-  renderTagChips();
-  const kept = _chatMsgs.filter(m => m.keep).length;
-  const total = res ? res.total : _chatMsgs.length;
-  const cached = res?.cached ? ` · 缓存命中 ${res.cached} 条` : '';
-  const summary = `✅ AI精华 ${kept}/${total} 条 · 规则过滤 ${res?.rule_dropped||0} 条${cached}`;
-  _renderCurrentView(summary);
+    else{t.className='toast err';t.textContent=d.detail||'失败';}
+  }catch(e){t.className='toast err';t.textContent=e.message;}
 }
 
 // ══ Helpers ══
 function v(id){return document.getElementById(id)?.value?.trim()||'';}
 function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
-document.getElementById('keyword').addEventListener('keydown', e=>{if(e.key==='Enter')doSearch();});
+document.getElementById('keyword').addEventListener('keydown', e=>{if(e.key==='Enter')runSearch();});
 </script>
 </body>
 </html>

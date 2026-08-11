@@ -43,3 +43,15 @@ async def list_saved(db: Session = Depends(get_db)):
         raise HTTPException(503, "Database not configured")
     jobs = db.query(SavedJob).order_by(SavedJob.created_at.desc()).all()
     return {"jobs": jobs, "total": len(jobs)}
+
+
+@router.delete("/saved/{job_id}")
+async def delete_saved(job_id: int, db: Session = Depends(get_db)):
+    if db is None:
+        raise HTTPException(503, "Database not configured")
+    row = db.query(SavedJob).filter_by(id=job_id).first()
+    if not row:
+        raise HTTPException(404, "Not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}

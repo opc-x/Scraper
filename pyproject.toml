@@ -16,6 +16,8 @@ dependencies = [
     "openai>=1.60.0",
     "pyyaml>=6.0",
     "telethon>=1.36.0",
+    "boto3>=1.35.0",
+    "sqlalchemy-libsql>=0.2.0",
 ]
 
 [project.optional-dependencies]
@@ -34,3 +36,4 @@ select = ["E", "F", "I", "N", "W"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+python_files = ["test_*.py", "*_test.py", "x.py"]

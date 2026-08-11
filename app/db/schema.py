@@ -52,6 +52,29 @@ class SavedJob(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class ScrapedJob(Base):
+    """每次 /api/search 抓到的全量结果，跟用户手动收藏的 SavedJob 分开存。"""
+
+    __tablename__ = "scraped_jobs"
+    __table_args__ = (UniqueConstraint("channel", "external_id", name="uq_scraped_job"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    company: Mapped[str] = mapped_column(String(256), nullable=False)
+    salary: Mapped[str] = mapped_column(String(64), default="")
+    city: Mapped[str] = mapped_column(String(64), default="")
+    experience: Mapped[str] = mapped_column(String(64), default="")
+    education: Mapped[str] = mapped_column(String(64), default="")
+    skills: Mapped[dict] = mapped_column(JSON, default=list)
+    description: Mapped[str] = mapped_column(Text, default="")
+    url: Mapped[str] = mapped_column(String(512), default="")
+    raw: Mapped[dict] = mapped_column(JSON, default=dict)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class TgClassifyCache(Base):
     __tablename__ = "tg_classify_cache"
     __table_args__ = (UniqueConstraint("account_id", "target", "msg_id", name="uq_tg_classify"),)

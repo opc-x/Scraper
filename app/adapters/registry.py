@@ -2,6 +2,7 @@ from app.adapters.base import BaseAdapter
 from app.adapters.boss import BossAdapter
 from app.adapters.discord import DiscordAdapter
 from app.adapters.telegram import TelegramAdapter
+from app.channels.x import XAdapter
 
 _adapters: dict[str, BaseAdapter] = {}
 
@@ -15,6 +16,8 @@ def get_adapter(channel: str) -> BaseAdapter:
                 _adapters[channel] = TelegramAdapter()
             case "discord":
                 _adapters[channel] = DiscordAdapter()
+            case "x":
+                _adapters[channel] = XAdapter()
             case _:
                 raise ValueError(f"Unknown channel: {channel}")
     return _adapters[channel]

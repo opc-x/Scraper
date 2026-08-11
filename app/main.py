@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 from app.adapters.registry import close_all
 from app.core.telegram_client import close_all_clients
-from app.api.routes import channels, config, save, search, telegram_auth, telegram_ops
+from app.api.routes import channels, config, save, scraped, search, telegram_auth, telegram_ops
 from app.core.config import settings
 
 
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Scraper",
-    description="AI-native multi-channel job scraper",
+    description="AI-native multi-channel data scraper",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -72,6 +72,7 @@ app.add_middleware(
 app.include_router(search.router)
 app.include_router(channels.router)
 app.include_router(save.router)
+app.include_router(scraped.router)
 app.include_router(config.router)
 app.include_router(telegram_auth.router)
 app.include_router(telegram_ops.router)
@@ -93,7 +94,7 @@ async def manifest():
     return JSONResponse({
         "name": "Scraper 职位狙击",
         "short_name": "Scraper",
-        "description": "多渠道职位实时抓取",
+        "description": "多渠道数据实时抓取",
         "start_url": "/",
         "display": "standalone",
         "background_color": "#0a0a0a",

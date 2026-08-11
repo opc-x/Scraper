@@ -25,6 +25,7 @@ async def list_channels():
         channels.append({
             "id": ch_id,
             "name": schema["name"],
+            "board": schema.get("board", ""),
             "description": schema["description"],
             "status": status,
         })

@@ -9,8 +9,8 @@ AI-native 多渠道职位抓取微服务 — 现用现抓 · 配置驱动 · 插
 | 框架 | FastAPI |
 | 语言 | Python 3.11+ |
 | 抓取引擎 | DrissionPage (API 包监听) + browser-use (AI 兜底) |
-| DB | Neon PostgreSQL (独立 scraper 库) |
-| ORM | SQLAlchemy 2.0 |
+| DB | Turso (libSQL，独立 scraper 库，免费档 5GB) |
+| ORM | SQLAlchemy 2.0（`sqlalchemy-libsql` dialect） |
 | 部署 | Azure VM (Docker) |
 
 ## 目录结构
@@ -77,4 +77,13 @@ docker compose up -d     # http://localhost:8000
 - 现用现抓，不批量存储，只收藏精选
 - 每个渠道一个 Adapter，配置驱动，插拔式
 - DrissionPage 监听 API 包优先（最稳），browser-use AI 语义提取兜底
-- 独立微服务，独立数据库，与 JobSniper Web 解耦
+- 独立微服务，独立数据库，与调用方 Web 解耦
+
+## 消费方
+
+数据处理（抓取 + 规则前置筛选 + AI 打标签 + 打分排序）全部封装在这个服务内部，调用方只拿处理好的结果，不碰抓取逻辑。
+
+- **JobSniper Web** — `boss` 渠道，职位抓取
+- **signore**（晨报）— 计划新增渠道（如 `x`），把浏览器登录态/Cookie 维护也放在这个常驻服务里，signore 部署在 Vercel（无状态、装不下内嵌浏览器），只通过 API 调这里拿数据，不自己抓
+
+新增渠道跟 `app/adapters/boss.py` 同一套模式，接口和目录结构不用为新调用方另起一套。
