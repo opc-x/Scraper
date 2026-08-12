@@ -59,6 +59,29 @@ def test_extract_tweets_walks_nested_graphql_payload():
     assert tweets[0]["created_at"] == "Mon Aug 11 00:00:00 +0000 2026"
 
 
+def test_extract_tweets_reads_screen_name_from_nested_core():
+    # 真实 X 响应里用户名/昵称在 result.core 而不是 result.legacy（2026-08 抓包实测确认）
+    payload = {
+        "core": {
+            "user_results": {
+                "result": {
+                    "core": {"screen_name": "hiring_bot", "name": "Hiring Bot"},
+                }
+            }
+        },
+        "legacy": {
+            "full_text": "We're hiring a Senior Python Engineer, remote.",
+            "created_at": "Mon Aug 11 00:00:00 +0000 2026",
+        },
+    }
+
+    tweets = XAdapter.extract_tweets(payload)
+
+    assert len(tweets) == 1
+    assert tweets[0]["screen_name"] == "hiring_bot"
+    assert tweets[0]["name"] == "Hiring Bot"
+
+
 def test_extract_tweets_empty_payload_returns_empty_list():
     assert XAdapter.extract_tweets({}) == []
     assert XAdapter.extract_tweets({"data": {}}) == []

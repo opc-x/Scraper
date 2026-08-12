@@ -12,3 +12,4 @@ __pycache__/
 .mypy_cache/
 *.session
 channels.yaml
+.chrome_profiles/

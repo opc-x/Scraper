@@ -18,14 +18,18 @@ def _r2_key(channel: str) -> str:
     return f"chrome-profiles/{channel}.tar.gz"
 
 
-def new_page(channel: str) -> ChromiumPage:
-    """持久化 profile 的 headless page，登录态落盘；本地没有 profile 时先从 R2 拉一份。"""
+def new_page(channel: str, headless: bool = True) -> ChromiumPage:
+    """持久化 profile 的 page，登录态落盘；本地没有 profile 时先从 R2 拉一份。
+
+    headless=False 用于人工交互登录（真实浏览器窗口，行为上就是个正常用户在操作）。
+    """
     profile_dir = _profile_dir(channel)
     if not os.listdir(profile_dir):
         r2.download_dir(_r2_key(channel), profile_dir)
 
     opts = ChromiumOptions()
-    opts.headless()
+    if headless:
+        opts.headless()
     opts.set_argument("--no-sandbox")
     opts.set_argument("--disable-gpu")
     opts.set_user_data_path(profile_dir)

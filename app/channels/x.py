@@ -78,16 +78,18 @@ class XAdapter(BaseAdapter):
             if isinstance(node, dict):
                 legacy = node.get("legacy")
                 if isinstance(legacy, dict) and "full_text" in legacy:
-                    user_legacy = (
+                    user_result = (
                         node.get("core", {})
                         .get("user_results", {})
                         .get("result", {})
-                        .get("legacy", {})
                     )
+                    # 用户名/昵称在 result.core 里，legacy 是旧字段位置，两个都兜一下
+                    user_core = user_result.get("core", {})
+                    user_legacy = user_result.get("legacy", {})
                     tweets.append({
                         "text": legacy.get("full_text", ""),
-                        "screen_name": user_legacy.get("screen_name", ""),
-                        "name": user_legacy.get("name", ""),
+                        "screen_name": user_core.get("screen_name") or user_legacy.get("screen_name", ""),
+                        "name": user_core.get("name") or user_legacy.get("name", ""),
                         "created_at": legacy.get("created_at", ""),
                     })
                 for v in node.values():

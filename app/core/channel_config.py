@@ -95,11 +95,11 @@ CHANNEL_SCHEMA = {
         "fields": [
             {
                 "key": "cookie",
-                "label": "Cookie",
+                "label": "Cookie（可选，兜底用）",
                 "type": "textarea",
-                "placeholder": "从浏览器复制 Cookie 粘贴到这里...",
-                "help": "浏览器登录 x.com → F12 → Application → Cookies → 全选复制（需含 auth_token / ct0）",
-                "required": True,
+                "placeholder": "一般不用填，运行 scripts/x_login.py 交互登录即可",
+                "help": "登录态默认走 scripts/x_login.py 人工登录后持久化的浏览器 profile；这里只是备用兜底入口",
+                "required": False,
             },
             {
                 "key": "llm_api_key",
