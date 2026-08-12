@@ -75,6 +75,58 @@ class ScrapedJob(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+class MinedAccount(Base):
+    """账号挖掘结果：某渠道下抓到的账号 + AI 打的标签/置信度，跟帖子/职位（ScrapedJob）是两回事。"""
+
+    __tablename__ = "mined_accounts"
+    __table_args__ = (UniqueConstraint("channel", "topic", "handle", name="uq_mined_account"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    topic: Mapped[str] = mapped_column(String(64), nullable=False)  # 挖掘主题，比如 remote_hiring
+    handle: Mapped[str] = mapped_column(String(128), nullable=False)  # screen_name / 频道名
+    profile_url: Mapped[str] = mapped_column(String(512), default="")
+    bio: Mapped[str] = mapped_column(Text, default="")  # 账号自己写的简介，原文
+    confidence: Mapped[int] = mapped_column(Integer, nullable=False)  # 0-100，是否符合主题
+    value_score: Mapped[int] = mapped_column(Integer, default=0)  # 0-100，内容对我的价值
+    kept: Mapped[bool] = mapped_column(Boolean, default=True)  # 是否过了阈值
+    tags: Mapped[dict] = mapped_column(JSON, default=list)
+    rationale: Mapped[str] = mapped_column(Text, default="")
+    scored_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class XAccount(Base):
+    """X 账号原始档案：账号本身的公开资料快照（粉丝数/简介/头像等），跟主题无关，
+    是所有挖掘/分析动作的底表——不管做哪个 topic 的判断，都从这张表里取账号基础信息，
+    不用每次重新抓。跟 MinedAccount（某个 topic 下 AI 打的标签/置信度）是两张不同的表。
+    """
+
+    __tablename__ = "x_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    rest_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)  # X 内部用户 id，稳定不变
+    screen_name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)  # @handle，可能会改
+    name: Mapped[str] = mapped_column(String(256), default="")  # 昵称
+    bio: Mapped[str] = mapped_column(Text, default="")
+    location: Mapped[str] = mapped_column(String(256), default="")
+    website_url: Mapped[str] = mapped_column(String(512), default="")
+    avatar_url: Mapped[str] = mapped_column(String(512), default="")
+    banner_url: Mapped[str] = mapped_column(String(512), default="")
+    x_created_at: Mapped[str] = mapped_column(String(64), default="")  # 账号在 X 上的注册时间原文
+    followers_count: Mapped[int] = mapped_column(Integer, default=0)
+    following_count: Mapped[int] = mapped_column(Integer, default=0)
+    tweets_count: Mapped[int] = mapped_column(Integer, default=0)
+    media_tweets_count: Mapped[int] = mapped_column(Integer, default=0)
+    favorites_count: Mapped[int] = mapped_column(Integer, default=0)  # 账号点赞过的数量
+    is_blue_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)  # 旧版官方认证（跟 blue 认证是两回事）
+    protected: Mapped[bool] = mapped_column(Boolean, default=False)
+    pinned_tweet_ids: Mapped[dict] = mapped_column(JSON, default=list)
+    raw: Mapped[dict] = mapped_column(JSON, default=dict)  # 完整原始 profile，字段不够用时兜底，不用重新抓包
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    synced_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class TgClassifyCache(Base):
     __tablename__ = "tg_classify_cache"
     __table_args__ = (UniqueConstraint("account_id", "target", "msg_id", name="uq_tg_classify"),)

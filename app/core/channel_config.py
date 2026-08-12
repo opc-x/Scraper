@@ -111,6 +111,29 @@ CHANNEL_SCHEMA = {
             },
         ],
     },
+    "youtube": {
+        "name": "YouTube",
+        "board": "job",
+        "description": "视频搜索，标题/简介里的招聘信号（走官方 API，免费档 100 次搜索/天）",
+        "fields": [
+            {
+                "key": "api_key",
+                "label": "YouTube Data API Key",
+                "type": "password",
+                "placeholder": "AIza...",
+                "help": "Google Cloud Console 开一个项目，启用 YouTube Data API v3，生成 API Key（免费，无需绑卡）",
+                "required": True,
+            },
+            {
+                "key": "llm_api_key",
+                "label": "AI 解析 Key（DeepSeek）",
+                "type": "password",
+                "placeholder": "sk-...",
+                "help": "DeepSeek 开放平台 API Key，用于从视频标题/简介中提取职位信息",
+                "required": True,
+            },
+        ],
+    },
     "liepin": {
         "name": "猎聘",
         "board": "job",

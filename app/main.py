@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 from app.adapters.registry import close_all
 from app.core.telegram_client import close_all_clients
-from app.api.routes import channels, config, save, scraped, search, telegram_auth, telegram_ops
+from app.api.routes import accounts, channels, config, save, scraped, search, telegram_auth, telegram_ops
 from app.core.config import settings
 
 
@@ -73,6 +73,7 @@ app.include_router(search.router)
 app.include_router(channels.router)
 app.include_router(save.router)
 app.include_router(scraped.router)
+app.include_router(accounts.router)
 app.include_router(config.router)
 app.include_router(telegram_auth.router)
 app.include_router(telegram_ops.router)

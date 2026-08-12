@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
 
     boss_cookie: str = ""
+    youtube_api_key: str = ""
 
     r2_account_id: str = ""
     r2_access_key_id: str = ""

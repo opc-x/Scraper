@@ -82,6 +82,28 @@ def test_extract_tweets_reads_screen_name_from_nested_core():
     assert tweets[0]["name"] == "Hiring Bot"
 
 
+def test_extract_tweets_reads_bio_from_profile_bio():
+    # bio 同一次迁移挪到了 result.profile_bio.description（2026-08 抓包实测确认）
+    payload = {
+        "core": {
+            "user_results": {
+                "result": {
+                    "core": {"screen_name": "hiring_bot", "name": "Hiring Bot"},
+                    "profile_bio": {"description": "Daily remote job alerts 🌍"},
+                }
+            }
+        },
+        "legacy": {
+            "full_text": "We're hiring a Senior Python Engineer, remote.",
+            "created_at": "Mon Aug 11 00:00:00 +0000 2026",
+        },
+    }
+
+    tweets = XAdapter.extract_tweets(payload)
+
+    assert tweets[0]["bio"] == "Daily remote job alerts 🌍"
+
+
 def test_extract_tweets_empty_payload_returns_empty_list():
     assert XAdapter.extract_tweets({}) == []
     assert XAdapter.extract_tweets({"data": {}}) == []

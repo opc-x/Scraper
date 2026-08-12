@@ -10,165 +10,247 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <title>Scraper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+/* ══════════════════════════════════════════
+   设计令牌 —— 深色卡片系统，圆角 + 柔光阴影 + 弱饱和强调色
+   ══════════════════════════════════════════ */
 :root {
-  --bg: #0a0a0a;
-  --bg2: #141414;
-  --bg3: #1c1c1c;
-  --border: #2a2a2a;
-  --text: #e5e5e5;
-  --text2: #888;
-  --text3: #555;
-  --green: #22c55e;
-  --green-dim: #052e16;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --blue: #0088cc;
-  --radius: 14px;
-  --nav-h: 64px;
+  --bg: #0b0c0f;
+  --bg-elevated: #131519;
+  --bg2: #16181d;
+  --bg3: #1e2128;
+  --bg-hover: #22262e;
+  --border: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.12);
+  --text: #eef0f3;
+  --text2: #9096a1;
+  --text3: #5b616e;
+
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.14);
+  --green-border: rgba(52,211,153,0.3);
+  --indigo: #818cf8;
+  --indigo-soft: rgba(129,140,248,0.14);
+  --indigo-border: rgba(129,140,248,0.3);
+  --amber: #fbbf24;
+  --amber-soft: rgba(251,191,36,0.14);
+  --amber-border: rgba(251,191,36,0.3);
+  --red: #fb7185;
+  --red-soft: rgba(251,113,133,0.14);
+  --red-border: rgba(251,113,133,0.3);
+  --blue: #38bdf8;
+  --blue-soft: rgba(56,189,248,0.14);
+
+  --radius-sm: 10px;
+  --radius: 18px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.55);
+  --shadow-pop: 0 4px 10px -4px rgba(0,0,0,0.5);
+  --nav-h: 68px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, 'SF Pro', 'PingFang SC', sans-serif; }
+
+html, body {
+  height: 100%;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(52,211,153,0.05), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(129,140,248,0.045), transparent 50%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, 'PingFang SC', 'SF Pro', sans-serif;
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--green-soft); color: var(--text); }
 
 /* ── Layout ── */
 .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
-.screen.active { display: flex; }
-.screen-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(var(--nav-h) + var(--safe-bottom) + 16px); }
+.screen.active { display: flex; animation: fade-in 0.25s var(--ease); }
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.screen-body { flex: 1; overflow-y: auto; padding: 4px 18px calc(var(--nav-h) + var(--safe-bottom) + 20px); }
 .screen-body::-webkit-scrollbar { display: none; }
 
 /* ── Top bar ── */
-.topbar { padding: 16px 16px 8px; padding-top: calc(env(safe-area-inset-top, 12px) + 12px); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.topbar-title { font-size: 22px; font-weight: 700; }
+.topbar { padding: 16px 18px 14px; padding-top: calc(env(safe-area-inset-top, 12px) + 14px); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.topbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 23px; font-weight: 800; letter-spacing: -0.02em; }
 .topbar-title span { color: var(--green); }
-.topbar-sub { font-size: 12px; color: var(--text3); }
+.topbar-sub { font-size: 12.5px; color: var(--text3); margin-top: 3px; font-weight: 500; }
 
 /* ── Bottom nav ── */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + var(--safe-bottom)); padding-bottom: var(--safe-bottom); background: rgba(10,10,10,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; z-index: 50; }
-.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: color 0.15s; color: var(--text3); border: none; background: none; }
-.nav-item.active { color: var(--green); }
-.nav-icon { font-size: 22px; line-height: 1; }
-.nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+.bottom-nav {
+  position: fixed; bottom: 10px; left: 12px; right: 12px;
+  height: var(--nav-h);
+  padding-bottom: 0;
+  margin-bottom: var(--safe-bottom);
+  background: rgba(19,21,25,0.78);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  display: flex;
+  z-index: 50;
+  box-shadow: var(--shadow-card);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  cursor: pointer; color: var(--text3); border: none; background: none; position: relative;
+  transition: color 0.2s var(--ease);
+  margin: 7px 5px; border-radius: var(--radius);
+}
+.nav-item.active { color: var(--green); background: var(--green-soft); }
+.nav-icon { font-size: 19px; line-height: 1; filter: grayscale(0.3); }
+.nav-item.active .nav-icon { filter: none; }
+.nav-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.2px; }
 
 /* ── Cards / inputs ── */
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow-card); }
 .card:last-child { margin-bottom: 0; }
-.search-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.search-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow-card); }
 .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .search-row:last-child { margin-bottom: 0; }
 input, select, textarea {
-  background: var(--bg);
+  background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 11px 14px;
   color: var(--text);
-  font-size: 15px;
+  font-size: 14.5px;
   flex: 1;
   outline: none;
   font-family: inherit;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
   -webkit-appearance: none;
   width: 100%;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--green); }
+input::placeholder, textarea::placeholder { color: var(--text3); }
+input:focus, select:focus, textarea:focus { border-color: var(--green-border); background: var(--bg-hover); }
+select { cursor: pointer; }
 .btn-fire {
   background: var(--green);
-  color: #000;
+  color: #06251a;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 11px 20px;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: opacity 0.15s;
+  transition: transform 0.12s var(--ease), opacity 0.15s var(--ease), filter 0.15s;
 }
+.btn-fire:hover { filter: brightness(1.08); }
+.btn-fire:active { transform: scale(0.97); }
 .btn-fire:disabled { opacity: 0.4; }
 
 /* ── Data row (scraped record) ── */
-.data-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
-.data-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 8px; }
-.data-title { font-size: 15px; font-weight: 600; line-height: 1.3; flex: 1; }
-.data-badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: var(--bg3); color: var(--text2); white-space: nowrap; }
-.data-sub { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
-.data-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.btn-sm { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.data-row { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-card); transition: border-color 0.2s var(--ease), transform 0.2s var(--ease); }
+.data-row:hover { border-color: var(--border-strong); }
+.data-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+.data-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15.5px; font-weight: 700; line-height: 1.3; flex: 1; letter-spacing: -0.01em; }
+.data-title a { text-decoration: none; }
+.data-title a:hover { text-decoration: underline; text-decoration-color: var(--green-border); }
+.data-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--bg3); color: var(--text2); white-space: nowrap; border: 1px solid var(--border); letter-spacing: 0.1px; }
+.data-sub { font-size: 12.5px; color: var(--text2); margin-bottom: 8px; line-height: 1.55; }
+.data-badges { display: flex; gap: 6px; flex-shrink: 0; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tag { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--indigo-soft); color: var(--indigo); border: 1px solid var(--indigo-border); white-space: nowrap; }
+.data-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.btn-toggle { padding: 6px 13px; border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); margin-right: auto; transition: all 0.15s var(--ease); }
+.btn-toggle:hover { border-color: var(--border-strong); color: var(--text); }
+.btn-toggle.active { background: var(--indigo-soft); color: var(--indigo); border-color: var(--indigo-border); }
+.btn-sm { padding: 7px 15px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: filter 0.15s, transform 0.12s var(--ease); }
+.btn-sm:active { transform: scale(0.96); }
 .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-.btn-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--border-strong); }
+.btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border); }
+.btn-danger:hover { filter: brightness(1.15); }
 
 /* ── Empty / loading ── */
-.empty { text-align: center; color: var(--text3); padding: 60px 20px; font-size: 14px; }
-.spin { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+.empty { text-align: center; color: var(--text3); padding: 60px 20px; font-size: 13.5px; font-weight: 500; }
+.spin { display: inline-block; width: 22px; height: 22px; border: 2.5px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 40px auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .center-spin { display: flex; justify-content: center; padding: 40px 0; }
 
 /* ── Title effect ── */
-.title-fx { background: linear-gradient(135deg, var(--green), #7dd3fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.title-fx { background: linear-gradient(135deg, var(--green), #67e8f9); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* ── Channel picker (二级手风琴：一级类目=板块，点击展开二级渠道列表) ── */
-.board-section { margin-bottom: 10px; }
+.board-section { margin-bottom: 8px; }
 .board-section:last-child { margin-bottom: 0; }
-.board-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; padding: 12px 4px; display: flex; align-items: baseline; gap: 8px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
-.board-arrow { color: var(--green); font-size: 11px; width: 10px; display: inline-block; }
-.board-desc { font-size: 11px; font-weight: 400; color: var(--text3); }
-.board-count { margin-left: auto; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 1px 8px; border-radius: 10px; }
+.board-title { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 0.2px; padding: 13px 4px; display: flex; align-items: baseline; gap: 8px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); transition: opacity 0.15s; }
+.board-title:hover { opacity: 0.8; }
+.board-arrow { color: var(--green); font-size: 10px; width: 10px; display: inline-block; transition: transform 0.2s var(--ease); }
+.board-desc { font-size: 11px; font-weight: 500; color: var(--text3); }
+.board-count { margin-left: auto; font-size: 10.5px; font-weight: 700; color: var(--text2); background: var(--bg3); padding: 2px 9px; border-radius: var(--radius-pill); border: 1px solid var(--border); }
 .board-body { padding-top: 10px; }
-.ch-pick { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.15s; }
-.ch-pick:active { background: var(--bg3); }
+.ch-pick { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.15s var(--ease); box-shadow: var(--shadow-card); }
+.ch-pick:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+.ch-pick:active { transform: scale(0.99); }
 .ch-pick-info { flex: 1; }
-.ch-pick-name { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
-.ch-pick-desc { font-size: 12px; color: var(--text3); }
-.ch-pick-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 500; }
-.badge.active { background: var(--green-dim); color: var(--green); }
-.badge.missing { background: #422006; color: var(--amber); }
-.badge.off { background: var(--bg3); color: var(--text3); }
-.ch-arrow { color: var(--text3); font-size: 16px; }
+.ch-pick-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15.5px; font-weight: 700; margin-bottom: 3px; letter-spacing: -0.01em; }
+.ch-pick-desc { font-size: 12px; color: var(--text3); line-height: 1.4; }
+.ch-pick-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.badge { font-size: 10.5px; padding: 4px 10px; border-radius: var(--radius-pill); font-weight: 700; border: 1px solid transparent; }
+.badge.active { background: var(--green-soft); color: var(--green); border-color: var(--green-border); }
+.badge.missing { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-border); }
+.badge.off { background: var(--bg3); color: var(--text3); border-color: var(--border); }
+.ch-arrow { color: var(--text3); font-size: 17px; }
 
 /* ── Channel detail ── */
-.detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-.btn-back { background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px; }
-.detail-title { font-size: 20px; font-weight: 700; }
-.field-group { margin-bottom: 14px; }
-.field-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+.detail-header { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; }
+.btn-back { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text2); font-size: 19px; cursor: pointer; padding: 6px 12px; border-radius: var(--radius-pill); line-height: 1; transition: all 0.15s; }
+.btn-back:hover { color: var(--text); border-color: var(--border-strong); }
+.detail-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.field-group { margin-bottom: 16px; }
+.field-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
 .field-label .req { color: var(--red); }
-.field-help { font-size: 11px; color: var(--text3); margin-top: 4px; line-height: 1.4; }
-.ch-footer-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border); }
-.toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.field-help { font-size: 11.5px; color: var(--text3); margin-top: 5px; line-height: 1.5; }
+.ch-footer-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--border); }
+.toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; }
 .toggle input { display: none; }
-.toggle-track { width: 44px; height: 26px; background: var(--border); border-radius: 13px; position: relative; transition: background 0.2s; }
-.toggle-track::after { content: ''; position: absolute; width: 20px; height: 20px; background: var(--text3); border-radius: 50%; top: 3px; left: 3px; transition: all 0.2s; }
-.toggle input:checked + .toggle-track { background: var(--green); }
-.toggle input:checked + .toggle-track::after { left: 21px; background: #fff; }
-.toggle-label { font-size: 14px; color: var(--text2); }
-.btn-save { background: var(--green); color: #000; border: none; border-radius: 10px; padding: 10px 24px; font-size: 14px; font-weight: 700; cursor: pointer; }
-.toast { font-size: 12px; }
+.toggle-track { width: 42px; height: 25px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-pill); position: relative; transition: background 0.2s var(--ease); }
+.toggle-track::after { content: ''; position: absolute; width: 19px; height: 19px; background: var(--text3); border-radius: 50%; top: 2px; left: 2px; transition: all 0.2s var(--ease); }
+.toggle input:checked + .toggle-track { background: var(--green); border-color: var(--green); }
+.toggle input:checked + .toggle-track::after { left: 20px; background: #06251a; }
+.toggle-label { font-size: 13.5px; font-weight: 600; color: var(--text2); }
+.btn-save { background: var(--green); color: #06251a; border: none; border-radius: var(--radius-sm); padding: 10px 22px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: filter 0.15s, transform 0.12s var(--ease); }
+.btn-save:hover { filter: brightness(1.08); }
+.btn-save:active { transform: scale(0.97); }
+.toast { font-size: 12px; font-weight: 600; }
 .toast.ok { color: var(--green); }
 .toast.err { color: var(--red); }
 
 /* ── Telegram accounts ── */
-.tg-section { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 16px; }
-.tg-section-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
-.acct-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
-.acct-info { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.acct-name { font-weight: 600; }
+.tg-section { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 18px; }
+.tg-section-title { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 14px; }
+.acct-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.acct-info { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+.acct-name { font-weight: 700; }
 .acct-phone { color: var(--text3); font-size: 12px; }
 .acct-btns { display: flex; gap: 6px; }
-.btn-login { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
-.btn-del { background: #7f1d1d; color: #fca5a5; border: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot.g { background: var(--green); }
-.dot.r { background: var(--red); }
+.btn-login { background: var(--blue-soft); color: var(--blue); border: 1px solid rgba(56,189,248,0.3); border-radius: var(--radius-sm); padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-del { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border); border-radius: var(--radius-sm); padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 3px transparent; }
+.dot.g { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.dot.r { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
 .add-acct-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 .add-acct-form input { font-size: 13px; padding: 9px 12px; }
 .add-acct-form .btn-full { grid-column: 1/-1; }
-.btn-full { width: 100%; background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.login-box { margin-top: 8px; margin-bottom: 8px; padding: 10px; background: var(--bg2); border-radius: 10px; border: 1px solid var(--border); }
+.btn-full { width: 100%; background: var(--blue); color: #05202e; border: none; border-radius: var(--radius-sm); padding: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: filter 0.15s; }
+.btn-full:hover { filter: brightness(1.08); }
+.login-box { margin-top: 8px; margin-bottom: 8px; padding: 11px; background: var(--bg-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .login-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .login-row:last-child { margin-bottom: 0; }
 .login-row input { font-size: 13px; padding: 9px 12px; }
-.btn-code { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-code { background: var(--blue-soft); color: var(--blue); border: 1px solid rgba(56,189,248,0.3); border-radius: var(--radius-sm); padding: 9px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -188,33 +270,23 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); }
   <div class="topbar">
     <div>
       <div class="topbar-title"><span>Scraper</span></div>
-      <div class="topbar-sub">选渠道 → 查/删数据，或触发一次抓取</div>
+      <div class="topbar-sub">选渠道 → 看 AI 挖到的账号、标签、置信度</div>
     </div>
   </div>
   <div class="screen-body">
     <div class="field-label" style="margin-bottom:6px">① 选择渠道</div>
+    <div class="search-row" style="margin-bottom:10px">
+      <select id="data-filter" style="flex:1" onchange="onChannelFilterChange()"></select>
+      <button class="btn-sm btn-ghost" onclick="loadAccounts()" style="flex-shrink:0">刷新</button>
+    </div>
+
     <div class="search-row" style="margin-bottom:14px">
-      <select id="data-filter" style="flex:1" onchange="loadData()"></select>
-      <button class="btn-sm btn-ghost" onclick="loadData()" style="flex-shrink:0">刷新</button>
+      <select id="topic-filter" style="flex:1" onchange="loadAccounts()">
+        <option value="">全部主题</option>
+      </select>
     </div>
 
-    <div class="field-label" style="margin-bottom:6px">② 触发抓取（可选，验证接口用）</div>
-    <div class="search-card">
-      <div class="search-row">
-        <input id="keyword" type="text" placeholder="关键词..." inputmode="search">
-      </div>
-      <div class="search-row">
-        <select id="channel" style="flex:1"></select>
-        <input id="city" type="text" placeholder="城市（可选）" style="flex:1">
-      </div>
-      <div class="search-row">
-        <button class="btn-fire" id="fire" onclick="runSearch()" style="width:100%">执行 /api/search</button>
-      </div>
-    </div>
-    <div id="result-summary" style="font-size:12px;color:var(--text3);margin-bottom:14px"></div>
-
-    <div class="field-label" style="margin-bottom:6px">③ 数据（scraped_jobs）</div>
-    <div id="data-list"><div class="empty">选择渠道后自动加载</div></div>
+    <div id="account-list"><div class="empty">选择渠道后自动加载</div></div>
   </div>
 </div>
 
@@ -256,7 +328,7 @@ function switchTab(tab) {
     document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
   });
   if (tab === 'config') showChannelPicker();
-  if (tab === 'data') loadData();
+  if (tab === 'data') loadAccounts();
 }
 
 // ══ Channel select init ══
@@ -266,18 +338,6 @@ async function loadChannels() {
   try {
     const res = await fetch('/api/channels');
     const data = await res.json();
-    const sel = document.getElementById('channel');
-    sel.innerHTML = '';
-    data.channels.forEach(ch => {
-      const o = document.createElement('option');
-      o.value = ch.id;
-      o.textContent = ch.name;
-      if (ch.status !== 'active') { o.disabled = true; o.textContent += ch.status === 'missing_config' ? ' (待配置)' : ' (未启用)'; }
-      sel.appendChild(o);
-    });
-    const active = data.channels.find(c => c.status === 'active');
-    if (active) sel.value = active.id;
-
     const filterSel = document.getElementById('data-filter');
     filterSel.innerHTML = '<option value="">全部渠道</option>' +
       data.channels.map(ch => `<option value="${esc(ch.id)}">${esc(ch.name)}</option>`).join('');
@@ -286,59 +346,81 @@ async function loadChannels() {
 loadChannels();
 showChannelPicker();
 
-// ══ /api/search 触发器（验证接口） ══
-async function runSearch() {
-  const keyword = document.getElementById('keyword').value.trim();
-  if (!keyword) return;
-  const btn = document.getElementById('fire');
-  btn.disabled = true;
-  document.getElementById('result-summary').textContent = '';
-  const city = document.getElementById('city').value.trim();
-  const body = { keyword, city, channel: document.getElementById('channel').value };
-  const t0 = Date.now();
-  try {
-    const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-    document.getElementById('result-summary').textContent = `/api/search 返回 ${data.total} 条 · 用时 ${elapsed}s · 已写入 scraped_jobs`;
-    loadData();
-  } catch (e) { document.getElementById('result-summary').textContent = `失败：${e.message}`; }
-  finally { btn.disabled = false; }
+// ══ mined_accounts 查/删（渠道下 AI 挖到的账号 + 标签 + 置信度） ══
+async function onChannelFilterChange() {
+  await loadTopics();
+  loadAccounts();
 }
 
-// ══ scraped_jobs CRUD ══
-async function loadData() {
-  const el = document.getElementById('data-list');
+async function loadTopics() {
+  const channel = document.getElementById('data-filter').value;
+  const topicSel = document.getElementById('topic-filter');
+  try {
+    const qs = channel ? `?channel=${encodeURIComponent(channel)}` : '';
+    const res = await fetch(`/api/accounts/topics${qs}`);
+    const data = await res.json();
+    topicSel.innerHTML = '<option value="">全部主题</option>' +
+      data.topics.map(t => `<option value="${esc(t.topic)}">${esc(t.topic)}</option>`).join('');
+  } catch {}
+}
+
+async function loadAccounts() {
+  const el = document.getElementById('account-list');
   el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
   const channel = document.getElementById('data-filter').value;
+  const topic = document.getElementById('topic-filter').value;
   try {
-    const qs = channel ? `?channel=${encodeURIComponent(channel)}&limit=100` : '?limit=100';
-    const res = await fetch(`/api/scraped${qs}`);
+    const params = new URLSearchParams({ limit: '200' });
+    if (channel) params.set('channel', channel);
+    if (topic) params.set('topic', topic);
+    const res = await fetch(`/api/accounts?${params}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
-    el.innerHTML = data.jobs.length
-      ? data.jobs.map(dataRow).join('')
-      : '<div class="empty">scraped_jobs 表暂无数据</div>';
+    el.innerHTML = data.accounts.length
+      ? data.accounts.map(accountRow).join('')
+      : '<div class="empty">mined_accounts 表暂无数据</div>';
   } catch (e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
-function dataRow(j) {
-  const sub = [j.company, j.city, j.salary, j.experience].filter(Boolean).join(' · ');
+function accountRow(a) {
+  const confColor = a.confidence >= 70 ? 'var(--green)' : 'var(--text3)';
+  const valScore = a.value_score ?? 0;
+  const valColor = valScore >= 70 ? 'var(--green)' : 'var(--text3)';
+  const tags = (a.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const bioText = a.bio ? esc(a.bio).replace(/\n/g, '<br>') : '<span style="color:var(--text3)">该账号暂无抓取到的简介</span>';
+  const summaryText = a.rationale ? esc(a.rationale) : '<span style="color:var(--text3)">暂无 AI 摘要</span>';
   return `<div class="data-row">
-    <div class="data-head"><div class="data-title">${esc(j.title)}</div><span class="data-badge">${esc(j.channel)}</span></div>
-    <div class="data-sub">${esc(sub)}</div>
+    <div class="data-head">
+      <div class="data-title">${a.profile_url ? `<a href="${esc(a.profile_url)}" target="_blank" style="color:inherit">@${esc(a.handle)}</a>` : '@' + esc(a.handle)}</div>
+      <div class="data-badges">
+        <span class="data-badge" style="color:${confColor};border-color:${confColor}" title="置信度：是否符合主题">置信 ${a.confidence}%</span>
+        <span class="data-badge" style="color:${valColor};border-color:${valColor}" title="价值分：内容对我有多大用">价值 ${valScore}%</span>
+      </div>
+    </div>
+    <div class="data-sub">${esc(a.topic)}</div>
+    ${tags ? `<div class="tags">${tags}</div>` : ''}
+    <div class="data-sub" data-bio="${encodeURIComponent(bioText)}" data-summary="${encodeURIComponent(summaryText)}" data-mode="bio" style="margin-top:6px">${bioText}</div>
     <div class="data-actions">
-      ${j.url ? `<a href="${esc(j.url)}" target="_blank"><button class="btn-sm btn-ghost">原文</button></a>` : ''}
-      <button class="btn-sm btn-danger" onclick="deleteData(${j.id}, this)">删除</button>
+      <button class="btn-toggle" onclick="toggleAccountView(this)">看 AI 摘要（基于历史发帖）</button>
+      <button class="btn-sm btn-danger" onclick="deleteAccount(${a.id}, this)">删除</button>
     </div>
   </div>`;
 }
 
-async function deleteData(id, el) {
-  if (!confirm('确定删除这条记录？')) return;
+function toggleAccountView(btn) {
+  const row = btn.closest('.data-row');
+  const content = row.querySelector('[data-bio]');
+  const showingBio = content.dataset.mode === 'bio';
+  content.innerHTML = decodeURIComponent(showingBio ? content.dataset.summary : content.dataset.bio);
+  content.dataset.mode = showingBio ? 'summary' : 'bio';
+  btn.textContent = showingBio ? '看账号简介' : '看 AI 摘要（基于历史发帖）';
+  btn.classList.toggle('active', showingBio);
+}
+
+async function deleteAccount(id, el) {
+  if (!confirm('确定删除这个账号？')) return;
   try {
-    const res = await fetch(`/api/scraped/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
     if (res.ok) el.closest('.data-row').remove();
   } catch {}
 }
@@ -521,7 +603,6 @@ async function tgVerify(id){
 // ══ Helpers ══
 function v(id){return document.getElementById(id)?.value?.trim()||'';}
 function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
-document.getElementById('keyword').addEventListener('keydown', e=>{if(e.key==='Enter')runSearch();});
 </script>
 </body>
 </html>
