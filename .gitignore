@@ -14,3 +14,5 @@ venv/
 .mypy_cache/
 .chrome_profiles/
 .wrangler/
+docs/
+!docs/azure-aci-deploy.md

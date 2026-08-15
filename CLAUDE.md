@@ -12,7 +12,7 @@ AI-native 多渠道数据挖掘服务 — 基于优质数据源做数据接入�
 | DB | Turso (libSQL，独立 scraper 库，免费档 5GB) |
 | ORM | SQLAlchemy 2.0（`sqlalchemy-libsql` dialect） |
 | 登录态持久化 | Cloudflare R2（Chromium profile 回传/拉取，见 `app/infra/r2.py`） |
-| 部署 | Azure Container Instances (ACI, Docker 镜像, 见 `docs/azure-aci-deploy.md`) |
+| 部署 | 本机 Mac 常驻 + Cloudflare Tunnel（`scraper.opc-x.org`）。Azure ACI 已停用自动部署，`.github/workflows/deploy.yml` 改为手动触发（`workflow_dispatch`），避免每次 push 把 DNS 改回 Azure IP 跟本机隧道打架；历史踩坑记录见 `docs/azure-aci-deploy.md` |
 
 ## 本地 AI 挖掘环境（重要，别搞反架构）
 
@@ -73,6 +73,8 @@ GET    /api/scraped         ← 全量抓取结果（可按 channel 过滤）
 DELETE /api/scraped/{id}    ← 删除一条抓取记录
 POST   /api/save            ← 收藏精选职位
 GET    /api/saved           ← 已收藏列表
+GET    /api/accounts        ← 挖掘出的账号列表（mined_accounts / x_accounts）
+GET    /api/telegram/*      ← Telegram 账号登录态管理（telegram_auth.py）+ 会话内搜索/拉取消息/分类（telegram_ops.py）
 GET    /health               ← 健康检查
 ```
 
@@ -84,6 +86,15 @@ GET    /health               ← 健康检查
 3. 在 `app/adapters/registry.py` 注册
 4. 需要登录态的渠道优先走 `app/infra/chrome.py`（持久化 profile + R2 回传），不要每次手动粘贴 cookie
 
+已接入：`boss`（DrissionPage 监听 API 包）、`telegram`（Telethon）、`discord`、`x`（`app/channels/x.py`，持久化登录 + R2）、`youtube`（`app/channels/youtube.py`，走官方 API，用 `youtube_api_key`，不需要浏览器登录态）。
+
+## 数据挖掘脚本
+
+`rules/*.md` 定义挖掘规则（人工可读），配套脚本在 `scripts/`：
+- `scripts/x_login.py` — X 渠道交互式登录，本机手动跑一次，登录态经 `infra/r2.py` 回传
+- `scripts/mine_x_remote_hiring.py` — 按 `rules/x_remote_hiring_accounts.md` 规则抓候选账号历史发帖，只做机械抓取不做置信度判断，输出到 `/tmp/x_mining_raw.json`
+- `scripts/sync_x_accounts.py` — 把抓到的 X 账号 profile 写入 `x_accounts` 表（`python -m scripts.sync_x_accounts [handle ...]`，不传参则同步 `mined_accounts` 里 channel=x 的全部账号）
+
 ## 本地开发
 
 ```bash
@@ -92,6 +103,15 @@ cp .env.example .env
 
 pip install -e ".[dev]"
 python -m app.main       # http://localhost:8000
+```
+
+## 常用命令
+
+```bash
+pytest                              # 跑全部测试
+pytest tests/x.py                   # 跑单个测试文件
+pytest tests/x.py -k test_name      # 跑单个测试用例
+ruff check .                        # lint
 ```
 
 ## Docker 部署
