@@ -5,7 +5,12 @@ from DrissionPage import ChromiumOptions, ChromiumPage
 
 from app.infra import r2
 
-PROFILE_ROOT = os.environ.get("CHROME_PROFILE_ROOT", "/data/chrome_profiles")
+_default_profile_root = (
+    "/data/chrome_profiles"
+    if os.path.isdir("/data") and os.access("/data", os.W_OK)
+    else os.path.expanduser("~/.scraper/chrome_profiles")
+)
+PROFILE_ROOT = os.environ.get("CHROME_PROFILE_ROOT", _default_profile_root)
 
 
 def _profile_dir(channel: str) -> str:
@@ -41,8 +46,10 @@ def persist_profile(channel: str) -> None:
     r2.upload_dir(_r2_key(channel), _profile_dir(channel))
 
 
-def sync_cookies(page: ChromiumPage, channel: str, domain_url: str, cookie_domain: str, cookie: str) -> None:
-    """只在配置的 cookie 真的变了时才重新注入，避免每次冷启动用旧字符串把已刷新的持久化 session 冲掉。"""
+def sync_cookies(
+    page: ChromiumPage, channel: str, domain_url: str, cookie_domain: str, cookie: str
+) -> None:
+    """仅在 cookie 变化时注入，避免旧字符串覆盖持久化 session。"""
     if not cookie:
         return
 
@@ -59,12 +66,14 @@ def sync_cookies(page: ChromiumPage, channel: str, domain_url: str, cookie_domai
         pair = pair.strip()
         if "=" in pair:
             k, v = pair.split("=", 1)
-            page.set.cookies({
-                "name": k.strip(),
-                "value": v.strip(),
-                "domain": cookie_domain,
-                "path": "/",
-            })
+            page.set.cookies(
+                {
+                    "name": k.strip(),
+                    "value": v.strip(),
+                    "domain": cookie_domain,
+                    "path": "/",
+                }
+            )
 
     with open(marker, "w") as f:
         f.write(cookie_hash)

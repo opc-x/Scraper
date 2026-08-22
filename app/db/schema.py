@@ -52,6 +52,55 @@ class SavedJob(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class JobMark(Base):
+    """用户对某条抓取结果的标记：收藏或归档。一条职位同时只有一种状态。
+
+    存快照而不是外键，是因为 scraped_jobs 会被重新导入/清理，
+    用户收藏的东西不该跟着消失。
+    """
+
+    __tablename__ = "job_marks"
+    __table_args__ = (UniqueConstraint("channel", "external_id", name="uq_job_mark"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), default="")  # saved | archived | ""（仅已读）
+    read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # 已阅读，跟收藏/归档独立
+    scraped_job_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    title: Mapped[str] = mapped_column(String(256), default="")
+    company: Mapped[str] = mapped_column(String(256), default="")
+    salary: Mapped[str] = mapped_column(String(64), default="")
+    city: Mapped[str] = mapped_column(String(64), default="")
+    skills: Mapped[dict] = mapped_column(JSON, default=list)
+    description: Mapped[str] = mapped_column(Text, default="")
+    url: Mapped[str] = mapped_column(String(512), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class JobProfile(Base):
+    """本机 AI 生成的职位综合评估，按 scraped_job 缓存，生成一次反复看。"""
+
+    __tablename__ = "job_profiles"
+    __table_args__ = (UniqueConstraint("channel", "external_id", name="uq_job_profile"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    scraped_job_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    verdict: Mapped[str] = mapped_column(String(32), default="")      # 强烈推荐 / 值得一投 / 谨慎 / 不建议
+    fit_score: Mapped[int] = mapped_column(Integer, default=0)        # 0-100 匹配度
+    salary_min: Mapped[int] = mapped_column(Integer, default=0)       # 年薪 USD，供统计用
+    salary_max: Mapped[int] = mapped_column(Integer, default=0)
+    profile: Mapped[dict] = mapped_column(JSON, default=dict)         # 画像全文
+    model: Mapped[str] = mapped_column(String(64), default="")
+    generated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class ScrapedJob(Base):
     """每次 /api/search 抓到的全量结果，跟用户手动收藏的 SavedJob 分开存。"""
 
@@ -71,6 +120,8 @@ class ScrapedJob(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     url: Mapped[str] = mapped_column(String(512), default="")
     raw: Mapped[dict] = mapped_column(JSON, default=dict)
+    posted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # 岗位发布时间，来自各渠道原始数据
+    match_score: Mapped[int] = mapped_column(Integer, default=-1)  # 跟简历的匹配度 0-100，-1 = 还没算
     first_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

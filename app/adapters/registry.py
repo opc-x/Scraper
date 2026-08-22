@@ -1,7 +1,10 @@
 from app.adapters.base import BaseAdapter
 from app.adapters.boss import BossAdapter
 from app.adapters.discord import DiscordAdapter
+from app.adapters.eleduck import EleduckAdapter
+from app.adapters.jobboards import JobBoardAdapter
 from app.adapters.telegram import TelegramAdapter
+from app.adapters.v2ex import V2exAdapter
 from app.channels.x import XAdapter
 from app.channels.youtube import YouTubeAdapter
 
@@ -17,8 +20,14 @@ def get_adapter(channel: str) -> BaseAdapter:
                 _adapters[channel] = TelegramAdapter()
             case "discord":
                 _adapters[channel] = DiscordAdapter()
+            case "eleduck":
+                _adapters[channel] = EleduckAdapter()
             case "x":
                 _adapters[channel] = XAdapter()
+            case "jobboards" | "remoteok" | "weworkremotely":
+                _adapters[channel] = JobBoardAdapter()
+            case "v2ex":
+                _adapters[channel] = V2exAdapter()
             case "youtube":
                 _adapters[channel] = YouTubeAdapter()
             case _:

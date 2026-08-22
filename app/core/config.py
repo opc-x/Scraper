@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str = ""
+    local_sqlite_path: str = ""
 
     turso_database_url: str = ""
     turso_auth_token: str = ""

@@ -7,7 +7,19 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 from app.adapters.registry import close_all
 from app.core.telegram_client import close_all_clients
-from app.api.routes import accounts, channels, config, save, scraped, search, telegram_auth, telegram_ops
+from app.api.routes import (
+    accounts,
+    channels,
+    config,
+    drill,
+    jobs,
+    marks,
+    save,
+    scraped,
+    search,
+    telegram_auth,
+    telegram_ops,
+)
 from app.core.config import settings
 
 
@@ -16,6 +28,7 @@ def _run_migrations():
     from app.db.schema import Base
     from sqlalchemy import text
     import logging
+
     _log = logging.getLogger(__name__)
     if not engine:
         return
@@ -24,10 +37,13 @@ def _run_migrations():
     except Exception as e:
         _log.error("create_all failed: %s", e)
         return
-    # 补加唯一约束（表已存在时 create_all 不会加；有重复行则跳过，不崩服务）
+    # 这段补丁只适用于历史 PostgreSQL 库；Turso/SQLite 的新表由 create_all 建约束。
+    if engine.dialect.name != "postgresql":
+        return
     try:
         with engine.begin() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 DO $$ BEGIN
                     IF NOT EXISTS (
                         SELECT 1 FROM pg_constraint WHERE conname = 'uq_tg_classify'
@@ -42,7 +58,8 @@ def _run_migrations():
                         ADD CONSTRAINT uq_tg_classify UNIQUE (account_id, target, msg_id);
                     END IF;
                 END $$;
-            """))
+            """)
+            )
     except Exception as e:
         _log.warning("Migration uq_tg_classify skipped: %s", e)
 
@@ -73,8 +90,11 @@ app.include_router(search.router)
 app.include_router(channels.router)
 app.include_router(save.router)
 app.include_router(scraped.router)
+app.include_router(marks.router)
+app.include_router(jobs.router)
 app.include_router(accounts.router)
 app.include_router(config.router)
+app.include_router(drill.router)
 app.include_router(telegram_auth.router)
 app.include_router(telegram_ops.router)
 
@@ -82,7 +102,7 @@ app.include_router(telegram_ops.router)
 @app.get("/", response_class=HTMLResponse)
 async def index():
     html = (Path(__file__).parent / "index.html").read_text()
-    return HTMLResponse(html)
+    return HTMLResponse(html, headers={"Cache-Control": "no-store, max-age=0"})
 
 
 @app.get("/health")
@@ -92,66 +112,95 @@ async def health():
 
 @app.get("/manifest.json")
 async def manifest():
-    return JSONResponse({
-        "name": "Scraper 职位狙击",
-        "short_name": "Scraper",
-        "description": "多渠道数据实时抓取",
-        "start_url": "/",
-        "display": "standalone",
-        "background_color": "#0a0a0a",
-        "theme_color": "#0a0a0a",
-        "orientation": "portrait",
-        "icons": [
-            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
-        ],
-    })
+    return JSONResponse(
+        {
+            "name": "Scraper 职位狙击",
+            "short_name": "Scraper",
+            "description": "多渠道数据实时抓取",
+            "start_url": "/",
+            "display": "standalone",
+            "background_color": "#0a0a0a",
+            "theme_color": "#0a0a0a",
+            "orientation": "portrait",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any maskable",
+                },
+                {
+                    "src": "/icon-512.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable",
+                },
+            ],
+        }
+    )
 
 
 @app.get("/sw.js")
 async def service_worker():
     sw = """
-const CACHE = 'scraper-v1';
-const OFFLINE = ['/'];
-self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(OFFLINE))); self.skipWaiting(); });
+const CACHE = 'scraper-v3';
+self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('/api/')) return;
-  e.respondWith(fetch(e.request).catch(() => caches.match('/')));
+  if (e.request.mode === 'navigate' || e.request.url.includes('/api/')) return;
 });
 """
-    return Response(content=sw, media_type="application/javascript")
+    return Response(
+        content=sw,
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/icon-{size}.png")
 async def icon(size: str):
     import base64
+
     # 最小有效 PNG：绿色圆形
     _icons = {
         "192": "iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABpElEQVR4nO3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHgAAAABJRU5ErkJggg==",
     }
     # Return a simple 1x1 green PNG for any size
     import struct, zlib
+
     sz = int(size) if size.isdigit() else 192
+
     def make_png(s):
         center = s / 2
         rows = []
         for y in range(s):
-            row = b'\x00'
+            row = b"\x00"
             for x in range(s):
-                dx, dy = x - center + .5, y - center + .5
-                if dx*dx + dy*dy <= center*center:
-                    row += b'\x22\xc5\x5e\xff'
+                dx, dy = x - center + 0.5, y - center + 0.5
+                if dx * dx + dy * dy <= center * center:
+                    row += b"\x22\xc5\x5e\xff"
                 else:
-                    row += b'\x00\x00\x00\x00'
+                    row += b"\x00\x00\x00\x00"
             rows.append(row)
-        raw = b''.join(rows)
+        raw = b"".join(rows)
+
         def chunk(t, d):
             c = t + d
-            return struct.pack('>I', len(d)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
-        ihdr = struct.pack('>IIBBBBB', s, s, 8, 6, 0, 0, 0)
-        return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', ihdr) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
-    return Response(content=make_png(sz), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+            return struct.pack(">I", len(d)) + c + struct.pack(">I", zlib.crc32(c) & 0xFFFFFFFF)
+
+        ihdr = struct.pack(">IIBBBBB", s, s, 8, 6, 0, 0, 0)
+        return (
+            b"\x89PNG\r\n\x1a\n"
+            + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(raw))
+            + chunk(b"IEND", b"")
+        )
+
+    return Response(
+        content=make_png(sz),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 if __name__ == "__main__":

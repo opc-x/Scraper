@@ -1,7 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from datetime import datetime, timedelta
 
-from app.core.channel_config import BOARDS, CHANNEL_SCHEMA, _invalidate_cache, load_config, save_channel_config
-from app.db.connection import engine
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import Integer, func
+from sqlalchemy.orm import Session
+
+from app.core.channel_config import (
+    BOARDS,
+    CHANNEL_SCHEMA,
+    _invalidate_cache,
+    load_config,
+    save_channel_config,
+)
+from app.db.connection import engine, get_db
+from app.db.schema import ScrapedJob
 
 router = APIRouter(prefix="/api", tags=["config"])
 
@@ -15,6 +26,35 @@ async def get_config():
 @router.get("/channels/schema")
 async def get_schema():
     return {"schema": CHANNEL_SCHEMA, "boards": BOARDS}
+
+
+@router.get("/channels/status")
+async def get_channel_status(db: Session = Depends(get_db)):
+    if db is None:
+        raise HTTPException(503, "Database not configured")
+    since = datetime.utcnow() - timedelta(days=90)
+    grouped = db.query(
+        ScrapedJob.channel,
+        func.count(ScrapedJob.id),
+        func.sum((ScrapedJob.posted_at >= since).cast(Integer)),
+        func.sum(
+            ((ScrapedJob.posted_at >= since) & ScrapedJob.match_score.between(0, 100)).cast(Integer)
+        ),
+        func.max(ScrapedJob.posted_at),
+        func.max(ScrapedJob.last_seen_at),
+    ).group_by(ScrapedJob.channel).all()
+    return {
+        "channels": {
+            channel: {
+                "stored": stored or 0,
+                "recent": recent or 0,
+                "scored_recent": scored_recent or 0,
+                "latest_posted_at": latest_posted_at,
+                "last_synced_at": last_synced_at,
+            }
+            for channel, stored, recent, scored_recent, latest_posted_at, last_synced_at in grouped
+        }
+    }
 
 
 @router.put("/channels/config")

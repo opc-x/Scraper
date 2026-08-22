@@ -10,7 +10,10 @@ from app.infra import chrome, llm
 logger = logging.getLogger(__name__)
 
 SEARCH_API_PATTERN = "SearchTimeline"
-USER_TWEETS_API_PATTERN = "UserTweets"
+# X 会改接口名：2026-08 起个人主页时间线走 UserOriginalsTimeline，profile 走 UserByScreenName
+USER_TWEETS_API_PATTERN = ["UserTweets", "UserOriginalsTimeline", "UserMedia"]
+USER_PROFILE_API_PATTERN = ["UserByScreenName"]
+USER_BUNDLE_API_PATTERN = USER_TWEETS_API_PATTERN + USER_PROFILE_API_PATTERN
 X_SEARCH_URL = "https://x.com/search?q={query}&src=typed_query&f=live"
 X_PROFILE_URL = "https://x.com/{screen_name}"
 
@@ -25,6 +28,15 @@ class XAdapter(BaseAdapter):
 
     async def reload(self):
         await self.close()
+
+    def reset_page(self) -> None:
+        """浏览器连接断开后丢弃旧实例，让下一次请求自动重建。"""
+        if self._page:
+            try:
+                self._page.quit()
+            except Exception:
+                pass
+        self._page = None
 
     def _ensure_page(self):
         if self._page is None:
@@ -101,8 +113,49 @@ class XAdapter(BaseAdapter):
 
         return self.extract_tweets(data)
 
+    def fetch_user_bundle_sync(
+        self, screen_name: str, timeout: int = 20
+    ) -> tuple[list[dict], dict | None]:
+        """一次主页请求同时提取帖子和 profile，减少请求数及风控概率。
+
+        时间线和 profile 来自两个不同的 graphql 接口，所以要收多个包再合并，
+        不能像以前那样 wait() 一个包就返回。
+        """
+        page = self._ensure_page()
+        page.listen.start(USER_BUNDLE_API_PATTERN)
+        page.get(X_PROFILE_URL.format(screen_name=screen_name))
+
+        tweets: list[dict] = []
+        profile: dict | None = None
+        try:
+            for packet in page.listen.steps(timeout=timeout):
+                data = self._packet_json(packet)
+                if data is None:
+                    continue
+                if not tweets:
+                    tweets = self.extract_tweets(data)
+                if profile is None:
+                    profile = self.extract_user_profile(data)
+                if tweets and profile:
+                    break
+        except Exception:
+            pass
+        finally:
+            page.listen.stop()
+        return tweets, profile
+
+    @staticmethod
+    def _packet_json(packet):
+        if not packet or not packet.response:
+            return None
+        try:
+            body = packet.response.body
+            return json.loads(body) if isinstance(body, str) else body
+        except (json.JSONDecodeError, AttributeError):
+            return None
+
     def fetch_user_profile_sync(self, screen_name: str, timeout: int = 15) -> dict | None:
-        """访问账号主页，从 UserTweets 响应里摘出该账号的完整 profile（粉丝数/简介/头像等），用于建账号档案表。"""
+        """访问账号主页，从 UserTweets 响应摘出完整 profile，用于账号档案表。"""
         page = self._ensure_page()
         url = X_PROFILE_URL.format(screen_name=screen_name)
 
@@ -134,8 +187,13 @@ class XAdapter(BaseAdapter):
     @staticmethod
     def extract_user_profile(data) -> dict | None:
         """递归找到响应里第一个完整的 User 对象（user_results.result），返回原始 dict。"""
+
         def walk(node):
             if isinstance(node, dict):
+                # 任何 __typename == "User" 的结点都算：UserByScreenName 走 data.user.result，
+                # 时间线里走 user_results.result，两种壳都要认
+                if node.get("__typename") == "User" and ("legacy" in node or "core" in node):
+                    return node
                 user_results = node.get("user_results")
                 if isinstance(user_results, dict):
                     result = user_results.get("result")
@@ -163,23 +221,24 @@ class XAdapter(BaseAdapter):
             if isinstance(node, dict):
                 legacy = node.get("legacy")
                 if isinstance(legacy, dict) and "full_text" in legacy:
-                    user_result = (
-                        node.get("core", {})
-                        .get("user_results", {})
-                        .get("result", {})
-                    )
+                    user_result = node.get("core", {}).get("user_results", {}).get("result", {})
                     # 用户名/昵称在 result.core 里，legacy 是旧字段位置，两个都兜一下
                     user_core = user_result.get("core", {})
                     user_legacy = user_result.get("legacy", {})
-                    # bio 也从 legacy.description 挪到了 profile_bio.description（2026-08 抓包实测确认，跟 screen_name 同一次迁移）
-                    bio = user_result.get("profile_bio", {}).get("description") or user_legacy.get("description", "")
-                    tweets.append({
-                        "text": legacy.get("full_text", ""),
-                        "screen_name": user_core.get("screen_name") or user_legacy.get("screen_name", ""),
-                        "name": user_core.get("name") or user_legacy.get("name", ""),
-                        "created_at": legacy.get("created_at", ""),
-                        "bio": bio,
-                    })
+                    # 2026-08 实测 bio 与 screen_name 一起迁移到了新字段。
+                    bio = user_result.get("profile_bio", {}).get("description") or user_legacy.get(
+                        "description", ""
+                    )
+                    tweets.append(
+                        {
+                            "text": legacy.get("full_text", ""),
+                            "screen_name": user_core.get("screen_name")
+                            or user_legacy.get("screen_name", ""),
+                            "name": user_core.get("name") or user_legacy.get("name", ""),
+                            "created_at": legacy.get("created_at", ""),
+                            "bio": bio,
+                        }
+                    )
                 for v in node.values():
                     walk(v)
             elif isinstance(node, list):

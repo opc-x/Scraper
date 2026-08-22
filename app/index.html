@@ -75,7 +75,7 @@ html, body {
 .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
 .screen.active { display: flex; animation: fade-in 0.25s var(--ease); }
 @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.screen-body { flex: 1; overflow-y: auto; padding: 4px 18px calc(var(--nav-h) + var(--safe-bottom) + 20px); }
+.screen-body { flex: 1; min-width:0; overflow-y: auto; padding: 4px 18px calc(var(--nav-h) + var(--safe-bottom) + 20px); }
 .screen-body::-webkit-scrollbar { display: none; }
 
 /* ── Top bar ── */
@@ -83,6 +83,25 @@ html, body {
 .topbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 23px; font-weight: 800; letter-spacing: -0.02em; }
 .topbar-title span { color: var(--green); }
 .topbar-sub { font-size: 12.5px; color: var(--text3); margin-top: 3px; font-weight: 500; }
+.domain-switch { position:relative; flex-shrink:0; }
+.domain-trigger { display:flex; align-items:center; gap:8px; min-width:118px; padding:9px 11px;
+  color:var(--text); background:var(--bg-elevated); border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm); font:700 12px inherit; cursor:pointer; text-align:left; }
+.domain-trigger:hover { background:var(--bg-hover); }
+.domain-trigger .domain-icon { width:22px; height:22px; display:grid; place-items:center;
+  border-radius:7px; color:var(--green); background:var(--green-soft); font-size:12px; }
+.domain-trigger .domain-caret { margin-left:auto; color:var(--text3); transition:transform .18s var(--ease); }
+.domain-switch.open .domain-caret { transform:rotate(180deg); }
+.domain-menu { position:absolute; top:calc(100% + 8px); right:0; width:210px; padding:7px;
+  background:rgba(22,24,29,.98); border:1px solid var(--border-strong); border-radius:14px;
+  box-shadow:0 18px 48px rgba(0,0,0,.45); z-index:100; opacity:0; visibility:hidden;
+  transform:translateY(-5px); transition:opacity .16s, transform .16s var(--ease), visibility .16s; }
+.domain-switch.open .domain-menu { opacity:1; visibility:visible; transform:translateY(0); }
+.domain-option { width:100%; display:flex; align-items:center; gap:10px; padding:10px; border:0;
+  border-radius:9px; background:transparent; color:var(--text2); font:600 12px inherit; text-align:left; }
+.domain-option.active { color:var(--green); background:var(--green-soft); }
+.domain-option:disabled { color:var(--text3); }
+.domain-option .soon { margin-left:auto; font-size:9px; font-weight:700; color:var(--text3); }
 
 /* ── Bottom nav ── */
 .bottom-nav {
@@ -99,7 +118,7 @@ html, body {
   z-index: 50;
   box-shadow: var(--shadow-card);
 }
-.nav-item {
+.nav-item { padding-left:2px; padding-right:2px;
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   cursor: pointer; color: var(--text3); border: none; background: none; position: relative;
   transition: color 0.2s var(--ease);
@@ -151,16 +170,27 @@ select { cursor: pointer; }
 .btn-fire:disabled { opacity: 0.4; }
 
 /* ── Data row (scraped record) ── */
-.data-row { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-card); transition: border-color 0.2s var(--ease), transform 0.2s var(--ease); }
+.data-row { display:flex; gap:10px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:9px; box-shadow:var(--shadow-card); transition:border-color .2s var(--ease),transform .2s var(--ease); cursor:pointer; }
+.row-index { align-self:start; min-width:30px; color:var(--text3); font:800 11px 'Plus Jakarta Sans',sans-serif; padding-top:3px; }
+.data-row-main { min-width:0; flex:1; }
+.source-link { color:var(--green); text-decoration:none; font-weight:700; }
+.source-link:hover { text-decoration:underline; }
+.pagination { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; padding:12px 0 2px; }
+.page-btn { min-width:36px; height:36px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-elevated); color:var(--text2); font:700 12px inherit; cursor:pointer; }
+.page-btn.active { color:var(--green); border-color:var(--green-border); background:var(--green-soft); }
+.page-btn:disabled { opacity:.35; cursor:default; }
+.page-gap { color:var(--text3); padding:0 2px; }
 .data-row:hover { border-color: var(--border-strong); }
-.data-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+.data-head { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; margin-bottom:7px; gap:10px; }
 .data-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15.5px; font-weight: 700; line-height: 1.3; flex: 1; letter-spacing: -0.01em; }
 .data-title a { text-decoration: none; }
 .data-title a:hover { text-decoration: underline; text-decoration-color: var(--green-border); }
 .data-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--bg3); color: var(--text2); white-space: nowrap; border: 1px solid var(--border); letter-spacing: 0.1px; }
 .data-sub { font-size: 12.5px; color: var(--text2); margin-bottom: 8px; line-height: 1.55; }
-.data-badges { display: flex; gap: 6px; flex-shrink: 0; }
-.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.data-badges { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.match-badge { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:800; padding:5px 9px; }
+.tags { display:flex; flex-wrap:nowrap; gap:6px; margin:0; overflow-x:auto; scrollbar-width:none; }
+.tags::-webkit-scrollbar { display:none; }
 .tag { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--indigo-soft); color: var(--indigo); border: 1px solid var(--indigo-border); white-space: nowrap; }
 .data-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
 .btn-toggle { padding: 6px 13px; border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); margin-right: auto; transition: all 0.15s var(--ease); }
@@ -173,7 +203,123 @@ select { cursor: pointer; }
 .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border); }
 .btn-danger:hover { filter: brightness(1.15); }
 
+/* ── Data dashboard ── */
+.overview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:12px; max-height:1000px; overflow:hidden; transition:max-height .24s var(--ease),opacity .18s,margin .2s; }
+.overview.collapsed { max-height:0; opacity:0; margin-bottom:0; pointer-events:none; }
+.overview-toggle { width:100%; display:flex; justify-content:space-between; align-items:center; padding:10px 2px; margin-bottom:6px; border:0; background:none; color:var(--text2); font:700 12px inherit; cursor:pointer; }
+.overview-toggle strong { color:var(--text); }
+.metric { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius); padding:14px; cursor:pointer; transition:transform .12s var(--ease),border-color .15s; }
+.metric:active { transform:scale(.98); }
+.metric.active { border-color:var(--green-border); background:var(--green-soft); }
+.metric-name { color:var(--text2); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.metric-count { font-family:'Plus Jakarta Sans',sans-serif; font-size:25px; font-weight:800; margin-top:4px; }
+.metric-total { grid-column:1/-1; background:linear-gradient(135deg,var(--green-soft),var(--indigo-soft)); }
+.quick-filters { display:flex; width:100%; max-width:100%; min-width:0; flex-wrap:nowrap; gap:7px; overflow-x:auto; overscroll-behavior-x:contain; touch-action:pan-x; -webkit-overflow-scrolling:touch; padding:2px 0 12px; scrollbar-width:none; }
+.quick-filters::-webkit-scrollbar { display:none; }
+.filter-chip { flex:0 0 auto; border:1px solid var(--border); background:var(--bg3); color:var(--text2); border-radius:var(--radius-pill); padding:7px 12px; font:600 11px inherit; white-space:nowrap; cursor:pointer; }
+.filter-chip.active { color:var(--green); border-color:var(--green-border); background:var(--green-soft); }
+.list-head { display:flex; justify-content:space-between; align-items:center; margin:4px 2px 10px; }
+.sort-bar { display:flex; align-items:center; gap:5px; margin:0 0 8px; overflow-x:auto; scrollbar-width:none; }
+.sort-bar::-webkit-scrollbar { display:none; }
+.sort-label { color:var(--text3); font-size:11px; font-weight:700; flex:0 0 auto; }
+.sort-bar .filter-chip { padding:5px 9px; font-size:10.5px; }
+.list-title { font-size:13px; font-weight:700; }
+.latency { font-size:10px; color:var(--text3); }
+.job-meta { display:flex; gap:8px; flex-wrap:wrap; color:var(--text2); font-size:11.5px; margin-bottom:9px; }
+.tag.remote { color:var(--green); background:var(--green-soft); border-color:var(--green-border); }
+.tag.interest { color:var(--amber); background:var(--amber-soft); border-color:var(--amber-border); font-weight:800; }
+.tag.location { color:var(--amber); background:var(--amber-soft); border-color:var(--amber-border); }
+@media (min-width:700px) { .overview { grid-template-columns:repeat(4,minmax(0,1fr)); } .metric-total { grid-column:auto; } }
+
 /* ── Empty / loading ── */
+
+/* ── 职位卡操作条：收藏 / 归档 ── */
+.row-actions { display:flex; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.act { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:8px 10px; border-radius:var(--radius-sm); font:600 12px inherit; cursor:pointer;
+  background:var(--bg3); color:var(--text2); border:1px solid var(--border);
+  transition:background .15s, color .15s, border-color .15s, transform .1s var(--ease); }
+.act:hover { border-color:var(--border-strong); color:var(--text); }
+.act:active { transform:scale(.97); }
+.act.on.save { background:var(--amber-soft); color:var(--amber); border-color:var(--amber-border); }
+.act.on.arch { background:var(--bg-hover); color:var(--text); border-color:var(--border-strong); }
+.act.apply { background:var(--green-soft); color:var(--green); border-color:var(--green-border); text-decoration:none; }
+.data-row.leaving { opacity:0; transform:translateX(-14px); transition:opacity .22s var(--ease), transform .22s var(--ease); }
+
+/* ── 我的：分段控件 ── */
+.seg { display:flex; gap:6px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--radius-pill); padding:4px; margin-bottom:16px; }
+.seg button { flex:1; border:none; background:transparent; color:var(--text2);
+  font:700 12.5px inherit; padding:8px 10px; border-radius:var(--radius-pill); cursor:pointer;
+  transition:background .15s, color .15s; }
+.seg button.active { background:var(--green-soft); color:var(--green); }
+.seg .n { font-weight:800; opacity:.75; margin-left:4px; font-variant-numeric:tabular-nums; }
+
+/* ── 首页 ── */
+.home-hero { background:linear-gradient(135deg,var(--green-soft),var(--indigo-soft));
+  border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+.home-hero .n { font-family:'Plus Jakarta Sans',sans-serif; font-size:40px; font-weight:800; line-height:1.05; }
+.home-hero .l { color:var(--text2); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.home-hero .d { color:var(--text2); font-size:12.5px; margin-top:8px; }
+.home-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+.home-card { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; color:var(--text); cursor:pointer; text-align:left; transition:border-color .15s, transform .12s var(--ease); }
+.home-card:active { transform:scale(.98); }
+.home-card:hover { border-color:var(--border-strong); }
+.home-card .t { font-weight:700; font-size:14px; margin-bottom:3px; }
+.home-card .s { color:var(--text3); font-size:11.5px; }
+.section-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+  color:var(--text3); margin:20px 0 10px; }
+.snackbar { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--nav-h) + 20px);
+  background:var(--bg3); color:var(--text); border:1px solid var(--border-strong);
+  padding:10px 18px; border-radius:var(--radius-pill); font:600 12.5px inherit; z-index:99;
+  opacity:0; pointer-events:none; transition:opacity .2s, bottom .2s var(--ease); }
+.snackbar.show { opacity:1; bottom:calc(var(--nav-h) + 32px); }
+
+/* ── 职位详情（全屏覆盖层） ── */
+.detail { position:fixed; inset:0; background:var(--bg); z-index:200; overflow:hidden; display:flex; flex-direction:column;
+  transform:translateX(100%); transition:transform .26s var(--ease); }
+.detail.open { transform:translateX(0); }
+.detail-bar { position:sticky; top:0; z-index:2; background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px; padding:14px 16px; }
+.detail-bar .back { background:none; border:none; color:var(--text); font-size:22px; cursor:pointer; line-height:1; padding:0 4px; }
+.detail-bar .h { font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.detail-body { flex:1; min-height:0; overflow-y:auto; padding:18px 16px 20px; }
+.verdict { display:flex; align-items:center; gap:14px; padding:16px; border-radius:var(--radius);
+  border:1px solid var(--border); background:var(--bg-elevated); margin-bottom:16px; }
+.verdict .score { font-family:'Plus Jakarta Sans',sans-serif; font-size:34px; font-weight:800; line-height:1; }
+.verdict .vl { font-size:15px; font-weight:800; }
+.verdict .vs { color:var(--text2); font-size:12.5px; margin-top:4px; line-height:1.5; }
+.v-strong { color:var(--green); } .v-ok { color:var(--indigo); }
+.v-careful { color:var(--amber); } .v-no { color:var(--red); }
+.pane { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; margin-bottom:12px; }
+.pane h4 { margin:0 0 10px; font-size:11px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--text3); }
+.kv { display:flex; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.kv:last-child { border-bottom:none; }
+.kv .k { color:var(--text3); min-width:76px; flex-shrink:0; }
+.kv .v { color:var(--text); }
+.bullet { font-size:13px; color:var(--text2); line-height:1.65; padding-left:16px; position:relative; margin-bottom:6px; }
+.bullet::before { content:'·'; position:absolute; left:5px; color:var(--text3); font-weight:800; }
+.bullet.risk::before { content:'!'; color:var(--amber); font-size:11px; top:1px; }
+.detail-foot { position:relative; flex-shrink:0; z-index:3; display:flex; gap:10px;
+  padding:12px 16px calc(12px + var(--safe-bottom)); background:var(--bg2); border-top:1px solid var(--border); }
+.detail-foot .act { padding:12px; font-size:13px; }
+.gen-hint { text-align:center; color:var(--text3); font-size:12.5px; padding:10px 12px 16px; line-height:1.7; }
+
+/* ── 统计 ── */
+.bars { display:flex; flex-direction:column; gap:8px; }
+.bar-row { display:grid; grid-template-columns:64px 1fr 44px; gap:10px; align-items:center; font-size:12px; }
+.bar-row .lbl { color:var(--text2); font-weight:600; }
+.bar-track { height:8px; background:var(--bg3); border-radius:4px; overflow:hidden; }
+.bar-fill { height:100%; background:linear-gradient(90deg,var(--green),var(--indigo)); border-radius:4px; }
+.bar-row .num { text-align:right; color:var(--text3); font-variant-numeric:tabular-nums; }
+.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+.stat-box { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; text-align:center; }
+.stat-box .v { font-family:'Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:800; }
+.stat-box .k { color:var(--text3); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-top:3px; }
+.read-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green); margin-left:6px; vertical-align:middle; }
 .empty { text-align: center; color: var(--text3); padding: 60px 20px; font-size: 13.5px; font-weight: 500; }
 .spin { display: inline-block; width: 22px; height: 22px; border: 2.5px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 40px auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -227,6 +373,16 @@ select { cursor: pointer; }
 .toast { font-size: 12px; font-weight: 600; }
 .toast.ok { color: var(--green); }
 .toast.err { color: var(--red); }
+.pipeline-card { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px; }
+.pipeline-title { color:var(--text3); font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; margin-bottom:11px; }
+.pipeline-flow { display:flex; align-items:center; gap:6px; overflow-x:auto; padding-bottom:4px; }
+.pipeline-step { flex:0 0 auto; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg3); color:var(--text2); font-size:11px; font-weight:650; }
+.pipeline-arrow { color:var(--green); font-size:12px; flex:0 0 auto; }
+.pipeline-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:12px; }
+.pipeline-stat { padding:8px; border-radius:var(--radius-sm); background:var(--bg3); text-align:center; }
+.pipeline-stat b { display:block; color:var(--text); font-size:15px; }
+.pipeline-stat span { color:var(--text3); font-size:9.5px; }
+.pipeline-fresh { color:var(--text3); font-size:10.5px; line-height:1.5; margin-top:9px; }
 
 /* ── Telegram accounts ── */
 .tg-section { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 18px; }
@@ -256,12 +412,31 @@ select { cursor: pointer; }
 <body>
 
 <!-- ══ Screen: 渠道配置 ══ -->
-<div class="screen active" id="screen-config">
+<div class="screen active" id="screen-home">
   <div class="topbar">
-    <div class="topbar-title" id="config-title">渠道配置</div>
+    <div>
+      <div class="topbar-title"><span>Scraper</span></div>
+      <div class="topbar-sub">海外远程职位挖掘</div>
+    </div>
   </div>
-  <div class="screen-body" id="config-body">
-    <div class="center-spin"><div class="spin"></div></div>
+  <div class="screen-body">
+    <div class="home-hero">
+      <div class="l">近90天可浏览职位</div>
+      <div class="n" id="home-total">—</div>
+      <div class="d" id="home-breakdown">加载中…</div>
+    </div>
+    <div class="home-grid">
+      <button class="home-card" onclick="switchTab('data')">
+        <div class="t">浏览职位</div>
+        <div class="s" id="home-live">按技术栈筛选</div>
+      </button>
+      <button class="home-card" onclick="switchTab('mine')">
+        <div class="t">我的收藏</div>
+        <div class="s" id="home-marks">收藏 0 · 归档 0</div>
+      </button>
+    </div>
+    <div class="section-label">渠道配置</div>
+    <div id="config-body"><div class="center-spin"><div class="spin"></div></div></div>
   </div>
 </div>
 
@@ -270,65 +445,170 @@ select { cursor: pointer; }
   <div class="topbar">
     <div>
       <div class="topbar-title"><span>Scraper</span></div>
-      <div class="topbar-sub">选渠道 → 看 AI 挖到的账号、标签、置信度</div>
+      <div class="topbar-sub">职位总览 · 渠道分布 · 技术与地域标签</div>
     </div>
   </div>
   <div class="screen-body">
-    <div class="field-label" style="margin-bottom:6px">① 选择渠道</div>
-    <div class="search-row" style="margin-bottom:10px">
-      <select id="data-filter" style="flex:1" onchange="onChannelFilterChange()"></select>
-      <button class="btn-sm btn-ghost" onclick="loadAccounts()" style="flex-shrink:0">刷新</button>
+    <button class="overview-toggle" id="overview-toggle" onclick="toggleOverview()"><span>渠道概览 · <strong id="overview-total">—</strong></span><span id="overview-caret">展开⌄</span></button>
+    <div class="overview collapsed" id="channel-overview"><div class="metric metric-total"><div class="metric-name">全部职位</div><div class="metric-count">—</div></div></div>
+    <div class="quick-filters" id="tech-filters">
+      <button class="filter-chip active" data-tag="" onclick="setTechFilter('',this)">全部技术</button>
+      <button class="filter-chip" data-tag="java" onclick="setTechFilter('java',this)">Java</button>
+      <button class="filter-chip" data-tag="nodejs" onclick="setTechFilter('nodejs',this)">Node.js</button>
+      <button class="filter-chip" data-tag="agent" onclick="setTechFilter('agent',this)">Agent</button>
+      <button class="filter-chip" data-tag="python" onclick="setTechFilter('python',this)">Python</button>
+      <button class="filter-chip" data-tag="llm" onclick="setTechFilter('llm',this)">LLM</button>
+      <button class="filter-chip" data-tag="remote" onclick="setTechFilter('remote',this)">仅远程</button>
     </div>
-
-    <div class="search-row" style="margin-bottom:14px">
-      <select id="topic-filter" style="flex:1" onchange="loadAccounts()">
-        <option value="">全部主题</option>
-      </select>
+    <div class="quick-filters" id="quality-filters">
+      <button class="filter-chip active" disabled>仅近 3 个月</button>
+      <button class="filter-chip" onclick="toggleQualityFilter('minScore',60,this)">匹配度 ≥60</button>
     </div>
-
-    <div id="account-list"><div class="empty">选择渠道后自动加载</div></div>
+    <div class="quick-filters" id="preference-filters"></div>
+    <div class="sort-bar" id="sort-bar"><span class="sort-label">排序</span>
+      <button class="filter-chip active" data-sort="match" onclick="setSort('match',this)">匹配度 ↓</button>
+      <button class="filter-chip" data-sort="posted" onclick="setSort('posted',this)">发布时间</button>
+      <button class="filter-chip" data-sort="salary" onclick="setSort('salary',this)">薪资</button>
+    </div>
+    <div class="list-head"><div class="list-title" id="job-list-title">最新职位</div><div class="latency" id="data-latency">预加载中</div></div>
+    <div id="job-list"><div class="center-spin"><div class="spin"></div></div></div>
   </div>
 </div>
 
 <!-- ══ Screen: 接口 ══ -->
-<div class="screen" id="screen-api">
+<div class="screen" id="screen-fav">
   <div class="topbar">
-    <div class="topbar-title">接口</div>
+    <div>
+      <div class="topbar-title">收藏</div>
+      <div class="topbar-sub">打算投的职位都在这儿 · <span id="cnt-saved">0</span> 条</div>
+    </div>
   </div>
-  <div class="screen-body" style="padding:0">
-    <iframe id="api-frame" src="/docs" style="width:100%;height:calc(100dvh - var(--nav-h) - var(--safe-bottom));border:none;background:#fff"></iframe>
+  <div class="screen-body">
+    <div id="fav-list"><div class="center-spin"><div class="spin"></div></div></div>
   </div>
+</div>
+
+<!-- ══ Screen: 我的 ══ -->
+<div class="screen" id="screen-mine">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">我的</div>
+      <div class="topbar-sub">数据统计与归档记录</div>
+    </div>
+  </div>
+  <div class="screen-body">
+    <div id="mine-stats"></div>
+    <div class="section-label">归档记录 · <span id="cnt-archived">0</span> 条</div>
+    <div id="arch-list"><div class="center-spin"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ══ Screen: 职位详情 ══ -->
+<div class="screen" id="screen-drill">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">实战</div>
+      <div class="topbar-sub">系统设计 mock · 分布式深水区 · EM behavioral，跟着练英语</div>
+    </div>
+  </div>
+  <div class="screen-body">
+    <div class="search-card">
+      <div class="search-row">
+        <input type="text" id="drill-q" placeholder="搜关键词，如 staff engineer system design mock interview" onkeydown="if(event.key==='Enter')drillSearch(true)">
+        <button class="btn-fire" onclick="drillSearch(true)">搜索</button>
+      </div>
+      <div class="quick-filters" style="padding-bottom:0">
+        <button class="filter-chip" onclick="drillPreset('staff engineer system design mock interview')">系统设计 mock</button>
+        <button class="filter-chip" onclick="drillPreset('distributed systems kafka flink interview deep dive')">分布式 / Kafka / Flink</button>
+        <button class="filter-chip" onclick="drillPreset('engineering manager behavioral mock interview')">EM behavioral</button>
+        <button class="filter-chip" onclick="drillPreset('java backend architecture interview english')">Java 架构面试</button>
+      </div>
+    </div>
+    <div id="drill-body"></div>
+  </div>
+</div>
+
+<div class="detail" id="detail">
+  <div class="detail-bar">
+    <button class="back" onclick="closeDetail()">‹</button>
+    <div class="h" id="detail-title">职位详情</div>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+  <div class="detail-foot" id="detail-foot"></div>
 </div>
 
 <!-- ══ Bottom Nav ══ -->
 <nav class="bottom-nav">
-  <button class="nav-item active" id="nav-config" onclick="switchTab('config')">
-    <span class="nav-icon">📡</span>
-    <span class="nav-label">渠道配置</span>
+  <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">首页</span>
   </button>
   <button class="nav-item" id="nav-data" onclick="switchTab('data')">
     <span class="nav-icon">🗄️</span>
     <span class="nav-label">数据</span>
   </button>
-  <button class="nav-item" id="nav-api" onclick="switchTab('api')">
-    <span class="nav-icon">🔌</span>
-    <span class="nav-label">接口</span>
+  <button class="nav-item" id="nav-fav" onclick="switchTab('fav')">
+    <span class="nav-icon">⭐</span>
+    <span class="nav-label">收藏</span>
+  </button>
+  <button class="nav-item" id="nav-mine" onclick="switchTab('mine')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">我的</span>
+  </button>
+  <button class="nav-item" id="nav-drill" onclick="switchTab('drill')">
+    <span class="nav-icon">🎯</span>
+    <span class="nav-label">实战</span>
   </button>
 </nav>
 
 <script>
+// ══ Global data domain ══
+const DOMAIN_SWITCHER = `
+  <div class="domain-switch">
+    <button class="domain-trigger" type="button" aria-haspopup="true" aria-expanded="false" onclick="toggleDomainMenu(this)">
+      <span class="domain-icon">◎</span><span>海外职位</span><span class="domain-caret">⌄</span>
+    </button>
+    <div class="domain-menu" role="menu">
+      <button class="domain-option active" type="button"><span>◎</span><span>海外职位挖掘</span><span class="soon">当前</span></button>
+      <button class="domain-option" type="button" disabled><span>◇</span><span>商品数据挖掘</span><span class="soon">待接入</span></button>
+      <button class="domain-option" type="button" disabled><span>▣</span><span>企业信息挖掘</span><span class="soon">待接入</span></button>
+      <button class="domain-option" type="button" disabled><span>◉</span><span>舆情资讯挖掘</span><span class="soon">待接入</span></button>
+    </div>
+  </div>`;
+document.querySelectorAll('.topbar').forEach(bar => bar.insertAdjacentHTML('beforeend', DOMAIN_SWITCHER));
+function toggleDomainMenu(trigger) {
+  const root = trigger.closest('.domain-switch');
+  const open = !root.classList.contains('open');
+  document.querySelectorAll('.domain-switch.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.domain-trigger').setAttribute('aria-expanded', 'false');
+  });
+  root.classList.toggle('open', open);
+  trigger.setAttribute('aria-expanded', String(open));
+}
+document.addEventListener('click', event => {
+  if (event.target.closest('.domain-switch')) return;
+  document.querySelectorAll('.domain-switch.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.domain-trigger').setAttribute('aria-expanded', 'false');
+  });
+});
+
 // ══ PWA ══
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
 // ══ Tab switching ══
-const TABS = ['config', 'data', 'api'];
+const TABS = ['home', 'data', 'fav', 'mine', 'drill'];
 function switchTab(tab) {
+  const started = performance.now();
   TABS.forEach(t => {
     document.getElementById(`screen-${t}`).classList.toggle('active', t === tab);
     document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
   });
-  if (tab === 'config') showChannelPicker();
-  if (tab === 'data') loadAccounts();
+  if (tab === 'home') renderHome();
+  if (tab === 'data') renderDataDashboard(started);
+  if (tab === 'fav' || tab === 'mine') loadMine();
+  if (tab === 'drill') renderDrill();
 }
 
 // ══ Channel select init ══
@@ -345,6 +625,548 @@ async function loadChannels() {
 }
 loadChannels();
 showChannelPicker();
+loadMarkIndex();
+
+// ══ 职位数据看板：页面启动即预取，Tab 点击只做内存渲染 ══
+const dataState = { summary:null, jobs:[], byChannel:{}, totals:{}, channel:'', tag:'', preference:'', sort:'match', order:'desc', minScore:0, withinDays:90, page:1, pageSize:20, ready:false };
+let dataPromise = null;
+const DATA_CACHE_KEY = 'scraper:data:first-page:v4';
+
+try {
+  const cached = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null');
+  if (cached && Date.now() - cached.savedAt < 10 * 60 * 1000) {
+    dataState.summary = cached.summary || null;
+    dataState.jobs = cached.jobs || [];
+    dataState.totals.all = cached.total || dataState.jobs.length;
+    dataState.ready = dataState.jobs.length > 0;
+  }
+} catch {}
+
+function saveFirstPageCache() {
+  if (dataState.channel || dataState.tag || dataState.preference || dataState.minScore || dataState.page !== 1 || dataState.sort !== 'match' || dataState.order !== 'desc') return;
+  if (!dataState.summary) return;
+  try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({savedAt:Date.now(),summary:dataState.summary,jobs:dataState.jobs,total:dataState.totals.all||dataState.jobs.length})); } catch {}
+}
+
+function prefetchData(force=false) {
+  if (dataPromise && !force) return dataPromise;
+  const started = performance.now();
+  dataState.page = 1;
+  dataPromise = fetch(`/api/scraped?${jobQuery(dataState.channel)}`).then(r=>r.json()).then(jobs => {
+    const key = dataState.channel || 'all';
+    if (dataState.channel) dataState.byChannel[dataState.channel] = jobs.jobs || [];
+    else dataState.jobs = jobs.jobs || [];
+    dataState.totals[key] = jobs.total ?? (jobs.jobs||[]).length;
+    dataState.ready = true;
+    saveFirstPageCache();
+    if (document.getElementById('screen-data').classList.contains('active')) renderDataDashboard(started);
+    fetch('/api/scraped/summary').then(r=>r.json()).then(summary => {
+      dataState.summary = summary;
+      saveFirstPageCache();
+      renderHome();
+      if (document.getElementById('screen-data').classList.contains('active')) renderDataDashboard(started);
+    }).catch(()=>{});
+  }).catch((error) => {
+    dataPromise = null;
+    document.getElementById('data-latency').textContent='加载失败 · 点此重试';
+    document.getElementById('data-latency').onclick=()=>prefetchData(true);
+    document.getElementById('channel-overview').innerHTML='<div class="metric metric-total"><div class="metric-name">加载失败</div><div class="metric-count">!</div></div>';
+    document.getElementById('job-list').innerHTML=`<div class="empty">${esc(error.message||'数据加载失败')}<br><button class="btn-sm btn-ghost" style="margin-top:12px" onclick="prefetchData(true)">重新加载</button></div>`;
+  });
+  return dataPromise;
+}
+prefetchData();
+
+function renderDataDashboard(started) {
+  const latency = document.getElementById('data-latency');
+  if (started) latency.textContent = `${Math.round(performance.now()-started)}ms 响应`;
+  if (!dataState.ready) {
+    document.getElementById('job-list').innerHTML='<div class="center-spin"><div class="spin"></div></div>';
+    return;
+  }
+  const summary = dataState.summary;
+  if (summary) {
+    const cards = [{channel:'',count:summary.total},...(summary.channels||[])].filter((item,i)=>i===0||item.count>0);
+    document.getElementById('overview-total').textContent = `${summary.total || 0} 条 · ${(summary.channels||[]).filter(x=>x.count).length} 渠道`;
+    document.getElementById('channel-overview').innerHTML = cards.map((item,i) => `
+      <div class="metric ${i===0?'metric-total':''} ${dataState.channel===item.channel?'active':''}" onclick="setChannelFilter('${esc(item.channel)}')">
+        <div class="metric-name">${i===0?'全部职位':esc(channelName(item.channel))}</div>
+        <div class="metric-count">${item.count}</div>
+      </div>`).join('');
+    const pref = [{key:'',label:'全部偏好',count:summary.total},...(summary.preference_counts||[])];
+    document.getElementById('preference-filters').innerHTML = pref.map(item => `
+      <button class="filter-chip ${dataState.preference===item.key?'active':''}" onclick="setPreferenceFilter('${esc(item.key)}')">
+        ${esc(item.label)} <strong>${item.count}</strong>
+      </button>`).join('');
+  }
+  const jobs = dataState.channel ? (dataState.byChannel[dataState.channel]||[]) : dataState.jobs;
+  const sortName = {match:'匹配度',posted:'发布时间',salary:'薪资'}[dataState.sort];
+  const key = dataState.channel || 'all';
+  const total = dataState.totals[key] ?? jobs.length;
+  const arrow = dataState.order === 'desc' ? '↓' : '↑';
+  const pages = Math.max(1, Math.ceil(total / dataState.pageSize));
+  document.getElementById('job-list-title').textContent = `按${sortName}${arrow} · 第 ${dataState.page}/${pages} 页 · 共 ${total} 条`;
+  document.getElementById('job-list').innerHTML = jobs.length
+    ? jobs.map((job,index)=>jobRow(job,(dataState.page-1)*dataState.pageSize+index+1)).join('') + pagination(pages)
+    : '<div class="empty">当前筛选暂无职位</div>';
+}
+
+function pagination(totalPages) {
+  if (totalPages <= 1) return '';
+  const current = dataState.page;
+  const pages = [...new Set([1,current-1,current,current+1,totalPages])].filter(p=>p>=1&&p<=totalPages).sort((a,b)=>a-b);
+  let last = 0;
+  const numbered = pages.map(p => {
+    const gap = last && p-last>1 ? '<span class="page-gap">…</span>' : '';
+    last = p;
+    return `${gap}<button class="page-btn ${p===current?'active':''}" onclick="loadDataPage(${p})">${p}</button>`;
+  }).join('');
+  return `<nav class="pagination" aria-label="职位分页"><button class="page-btn" onclick="loadDataPage(${current-1})" ${current===1?'disabled':''}>上一页</button>${numbered}<button class="page-btn" onclick="loadDataPage(${current+1})" ${current===totalPages?'disabled':''}>下一页</button></nav>`;
+}
+
+async function loadDataPage(page=1) {
+  const started = performance.now();
+  dataState.page = Math.max(1, page);
+  document.getElementById('job-list').innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  const q = jobQuery(dataState.channel);
+  q.set('offset', String((dataState.page-1)*dataState.pageSize));
+  try {
+    const r = await fetch(`/api/scraped?${q}`).then(res=>res.json());
+    const key = dataState.channel || 'all';
+    if (dataState.channel) dataState.byChannel[dataState.channel] = r.jobs || [];
+    else dataState.jobs = r.jobs || [];
+    dataState.totals[key] = r.total ?? 0;
+    renderDataDashboard(started);
+    document.querySelector('#screen-data .screen-body').scrollTo({top:0,behavior:'smooth'});
+  } catch (error) {
+    document.getElementById('job-list').innerHTML = `<div class="empty">加载失败：${esc(error.message||'')}</div>`;
+  }
+}
+
+function channelName(id) {
+  return ({hackernews:'Hacker News',telegram:'Telegram',discord:'Discord',x:'X',remoteok:'RemoteOK',weworkremotely:'WeWorkRemotely',boss:'BOSS',youtube:'YouTube',v2ex:'V2EX',eleduck:'电鸭'})[id] || id;
+}
+
+async function setChannelFilter(channel) {
+  dataState.channel = channel;
+  await loadDataPage(1);
+}
+async function setTechFilter(tag,button) {
+  dataState.tag=tag;
+  document.querySelectorAll('#tech-filters .filter-chip').forEach(el=>el.classList.toggle('active',el===button));
+  await loadDataPage(1);
+}
+
+async function setPreferenceFilter(preference) {
+  dataState.preference = preference;
+  dataState.byChannel = {};
+  dataPromise = null;
+  dataState.ready = false;
+  await prefetchData(true);
+}
+
+function toggleOverview() {
+  const overview = document.getElementById('channel-overview');
+  const collapsed = overview.classList.toggle('collapsed');
+  document.getElementById('overview-caret').textContent = collapsed ? '展开⌄' : '收起⌃';
+}
+
+async function setSort(sort, button) {
+  if (dataState.sort === sort) dataState.order = dataState.order === 'desc' ? 'asc' : 'desc';
+  else { dataState.sort = sort; dataState.order = 'desc'; }
+  document.querySelectorAll('#sort-bar [data-sort]').forEach(el=>el.classList.toggle('active',el===button));
+  document.querySelectorAll('#sort-bar [data-sort]').forEach(el=>{
+    const labels={match:'匹配度',posted:'发布时间',salary:'薪资'};
+    el.textContent=labels[el.dataset.sort]+(el===button?(dataState.order==='desc'?' ↓':' ↑'):'');
+  });
+  dataState.byChannel = {};
+  dataState.totals = {};
+  dataPromise = null;
+  dataState.ready = false;
+  await prefetchData(true);
+}
+
+function jobQuery(channel='') {
+  const q = new URLSearchParams({limit:String(dataState.pageSize)});
+  if (channel) q.set('channel', channel);
+  if (dataState.tag === 'remote') q.set('remote', 'true');
+  else if (dataState.tag) q.set('tag', dataState.tag);
+  if (dataState.minScore) q.set('min_score', dataState.minScore);
+  if (dataState.withinDays) q.set('within_days', dataState.withinDays);
+  if (dataState.preference) q.set('preference', dataState.preference);
+  q.set('sort', dataState.sort);
+  q.set('order', dataState.order);
+  return q;
+}
+
+async function toggleQualityFilter(key, value, button) {
+  dataState[key] = dataState[key] ? 0 : value;
+  button.classList.toggle('active', !!dataState[key]);
+  dataState.byChannel = {};
+  dataPromise = null;
+  dataState.ready = false;
+  await prefetchData(true);
+}
+
+function relativeTime(value) {
+  if (!value) return '';
+  const ms = Date.now() - new Date(value).getTime();
+  if (!Number.isFinite(ms)) return '';
+  const days = Math.max(0, Math.floor(ms / 86400000));
+  if (days === 0) return '今天';
+  if (days < 30) return `${days} 天前`;
+  if (days < 365) return `${Math.floor(days / 30)} 个月前`;
+  return `${Math.floor(days / 365)} 年前`;
+}
+
+function scoreBadge(score) {
+  if (score == null || score < 0) return '<span class="data-badge">待评分</span>';
+  const color = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--indigo)' : score < 40 ? 'var(--text3)' : 'var(--amber)';
+  return `<span class="data-badge match-badge" style="color:${color};border-color:${color}">${score}% 匹配</span>`;
+}
+
+function jobRow(j, index) {
+  const saved = marks.saved.has(markKey(j));
+  const read = marks.read.has(markKey(j));
+  const frontendOnly = new Set(['react','vue','angular','svelte','css','html']);
+  const tags = [...new Set([...(j.core_tags||[]),...(j.skills||[]).slice(0,4)])].filter(t=>!frontendOnly.has(String(t).toLowerCase()));
+  const interestTags = (j.interest_tags||[]).map(t=>`<span class="tag interest" title="偏好命中 ${t.match}% · ${esc(t.evidence||'')}">${esc(t.label)} · ${t.match}%</span>`).join('');
+  const regions = (j.regions||[]).map(r=>`<span class="tag location">📍 ${esc(r)}</span>`).join('');
+  return `<article class="data-row" role="button" tabindex="0" onclick="openDetail(${j.id})" onkeydown="if(event.key==='Enter')openDetail(${j.id})">
+    <div class="row-index">#${index}</div><div class="data-row-main">
+    <div class="data-head"><div class="data-title">${esc(j.title)}${read?'<span class="read-dot"></span>':''}</div><div class="data-badges">${scoreBadge(j.match_score)}</div></div>
+    <div class="job-meta"><strong>${esc(j.company||'未知公司')}</strong><span>${esc(channelName(j.channel))}</span>${j.salary?`<span>${esc(j.salary)}</span>`:''}${relativeTime(j.posted_at)?`<span>${relativeTime(j.posted_at)}</span>`:''}${j.url?`<a class="source-link" href="${esc(j.url)}" target="_blank" onclick="event.stopPropagation()">原文 ↗</a>`:'<span title="源数据未保存链接">原文缺失</span>'}</div>
+    <div class="tags">${interestTags}${regions}${!regions&&j.city?`<span class="tag location">📍 ${esc(j.city)}</span>`:''}${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    </div></article>`;
+}
+
+
+// ══ 收藏 / 归档 ══
+const marks = { saved:new Set(), archived:new Set(), read:new Set(), rows:{saved:[],archived:[]}, tab:'saved' };
+const markKey = j => `${j.channel}:${j.external_id}`;
+
+async function loadMarkIndex() {
+  try {
+    const res = await fetch('/api/marks/index');
+    const data = await res.json();
+    marks.saved = new Set(data.saved || []);
+    marks.archived = new Set(data.archived || []);
+    marks.read = new Set(data.read || []);
+  } catch {}
+  updateMarkCounts();
+}
+
+function updateMarkCounts() {
+  const s = marks.saved.size, a = marks.archived.size;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('cnt-saved', s); set('cnt-archived', a);
+  const badge = document.getElementById('nav-fav');
+  if (badge) badge.classList.toggle('has-items', s > 0);
+  const hm = document.getElementById('home-marks');
+  if (hm) hm.textContent = `收藏 ${s} · 归档 ${a}`;
+}
+
+function snack(msg) {
+  let el = document.querySelector('.snackbar');
+  if (!el) { el = document.createElement('div'); el.className = 'snackbar'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+async function mark(jobId, channel, externalId, state, btn) {
+  const key = `${channel}:${externalId}`;
+  try {
+    const res = await fetch('/api/marks', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ job_id: jobId || null, channel, external_id: externalId, state })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    marks.saved.delete(key); marks.archived.delete(key);
+    if (data.state) marks[data.state].add(key);
+    updateMarkCounts();
+
+    if (state === 'archived' && data.state === 'archived') {
+      // 归档后立刻从列表里移走，不用等下次刷新
+      const card = btn && btn.closest('.data-row');
+      if (card) { card.classList.add('leaving'); setTimeout(() => card.remove(), 220); }
+      dataState.jobs = dataState.jobs.filter(j => markKey(j) !== key);
+      Object.keys(dataState.byChannel).forEach(c => {
+        dataState.byChannel[c] = (dataState.byChannel[c] || []).filter(j => markKey(j) !== key);
+      });
+      snack('已归档，列表不再展示');
+      return;
+    }
+    if (btn) {
+      const on = !!data.state;
+      btn.classList.toggle('on', on);
+      if (state === 'saved') btn.innerHTML = on ? '★ 已收藏' : '☆ 收藏';
+      else btn.innerHTML = on ? '已归档' : '归档';
+    }
+    snack(data.state === 'saved' ? '已收藏' : data.state === 'archived' ? '已归档' : '已取消');
+  } catch (e) {
+    snack('操作失败：' + (e.message || '未知错误'));
+  }
+}
+
+async function loadMine() {
+  const spin = '<div class="center-spin"><div class="spin"></div></div>';
+  ['fav-list', 'arch-list'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.loaded) el.innerHTML = spin;
+  });
+  try {
+    // 一次拿全部标记，Turso 是单连接串行的，能合并的请求就别拆
+    const all = (await fetch('/api/marks').then(r => r.json())).marks || [];
+    const key = m => `${m.channel}:${m.external_id}`;
+    marks.rows.saved = all.filter(m => m.state === 'saved');
+    marks.rows.archived = all.filter(m => m.state === 'archived');
+    marks.saved = new Set(marks.rows.saved.map(key));
+    marks.archived = new Set(marks.rows.archived.map(key));
+    marks.read = new Set(all.filter(m => m.read_at).map(key));
+    updateMarkCounts();
+    renderMine();
+    ['fav-list', 'arch-list'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.dataset.loaded = '1';
+    });
+    renderMineStats();
+  } catch (e) {
+    ['fav-list', 'arch-list'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<div class="empty">加载失败：${esc(e.message || '')}</div>`;
+    });
+  }
+}
+
+function markCard(m, kind) {
+  const skills = (m.skills || []).slice(0, 6).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const undo = kind === 'saved' ? '取消收藏' : '取消归档';
+  const jid = m.scraped_job_id;
+  return `<article class="data-row">
+    <div class="data-head">
+      <div class="data-title" ${jid?`style="cursor:pointer" onclick="openDetail(${jid})"`:''}>${esc(m.title || '未命名职位')}${m.read_at?'<span class="read-dot"></span>':''}</div>
+      <span class="data-badge">${esc(channelName(m.channel))}</span>
+    </div>
+    <div class="job-meta"><strong>${esc(m.company || '未知公司')}</strong>${m.salary ? `<span>${esc(m.salary)}</span>` : ''}</div>
+    <div class="tags">${m.city ? `<span class="tag location">📍 ${esc(m.city)}</span>` : ''}${skills}</div>
+    ${m.description ? `<div class="data-sub">${esc(m.description.slice(0, 220))}</div>` : ''}
+    <div class="row-actions">
+      ${m.url ? `<a class="act apply" href="${esc(m.url)}" target="_blank">去申请 →</a>` : ''}
+      <button class="act" onclick="undoMark(${m.id}, '${esc(m.channel)}', '${esc(m.external_id)}')">${undo}</button>
+    </div>
+  </article>`;
+}
+
+function renderMine() {
+  const fav = document.getElementById('fav-list');
+  if (fav) {
+    const rows = marks.rows.saved || [];
+    fav.innerHTML = rows.length
+      ? rows.map(m => markCard(m, 'saved')).join('')
+      : '<div class="empty">还没有收藏。<br>在「数据」里点 ☆ 收藏，想投的职位就会攒到这儿。</div>';
+  }
+  const arch = document.getElementById('arch-list');
+  if (arch) {
+    const rows = marks.rows.archived || [];
+    arch.innerHTML = rows.length
+      ? rows.map(m => markCard(m, 'archived')).join('')
+      : '<div class="empty">还没有归档。<br>归档过的职位会从列表消失，但能在这里翻回来。</div>';
+  }
+}
+
+async function undoMark(id, channel, externalId) {
+  try {
+    await fetch(`/api/marks/${id}`, { method:'DELETE' });
+    const key = `${channel}:${externalId}`;
+    marks.saved.delete(key); marks.archived.delete(key);
+    marks.rows.saved = marks.rows.saved.filter(m => m.id !== id);
+    marks.rows.archived = marks.rows.archived.filter(m => m.id !== id);
+    updateMarkCounts(); renderMine();
+    snack('已取消');
+    prefetchData(true);
+  } catch { snack('操作失败'); }
+}
+
+// ══ 首页 ══
+function renderHome() {
+  const summary = dataState.summary;
+  if (!summary) return;
+  document.getElementById('home-total').textContent = (summary.total || 0).toLocaleString();
+  const top = (summary.channels || []).filter(c => c.count > 0)
+    .map(c => `${channelName(c.channel)} ${c.count.toLocaleString()}`).join(' · ');
+  document.getElementById('home-breakdown').textContent = top || '暂无数据';
+  updateMarkCounts();
+}
+
+
+// ══ 职位详情 + AI 画像 ══
+const detail = { job:null, generating:false };
+const VERDICT_CLASS = {'强烈推荐':'v-strong','值得一投':'v-ok','谨慎':'v-careful','不建议':'v-no'};
+
+async function openDetail(jobId) {
+  const el = document.getElementById('detail');
+  el.classList.add('open');
+  document.getElementById('detail-title').textContent = '加载中…';
+  document.getElementById('detail-body').innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  document.getElementById('detail-foot').innerHTML = '';
+  try {
+    const job = await fetch(`/api/jobs/${jobId}`).then(r => r.json());
+    detail.job = job;
+    renderDetail();
+  } catch (e) {
+    document.getElementById('detail-body').innerHTML = `<div class="empty">加载失败：${esc(e.message||'')}</div>`;
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+  detail.job = null;
+}
+
+function _intentPane(p) {
+  const hi = p.hiring_intent;
+  let type = '', reason = '';
+  if (hi && typeof hi === 'object') { type = hi.type || ''; reason = hi.reason || ''; }
+  else if (typeof hi === 'string') { reason = hi; }
+  if (!type && !reason) {
+    return `<div class="pane"><h4>招聘意图</h4><div class="bullet">旧画像没有这一项，点下面重新生成</div></div>`;
+  }
+  return `<div class="pane"><h4>招聘意图</h4>
+    <div class="kv"><span class="k">类型</span><span class="v">${esc(type||'看不出')}</span></div>
+    <div class="kv"><span class="k">依据</span><span class="v">${esc(reason||'—')}</span></div>
+  </div>`;
+}
+
+function money(n) { return n ? '$' + Math.round(n/1000) + 'K' : '—'; }
+const USD_CNY = 7.14; // 粗折算，够用来给量级心里有数，不追求汇率精确
+function moneyCny(n) { return n ? '¥' + Math.round(n * USD_CNY / 10000) + 'w' : '—'; }
+
+function renderDetail() {
+  const j = detail.job;
+  document.getElementById('detail-title').textContent = j.title || '职位详情';
+  const p = j.profile;
+  const skills = (j.skills||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+
+  let html = `<div class="pane">
+    <h4>职位</h4>
+    <div style="font-size:17px;font-weight:700;line-height:1.4;margin-bottom:10px">${esc(j.title||'')}</div>
+    <div class="kv"><span class="k">公司</span><span class="v">${esc(j.company||'未知')}</span></div>
+    <div class="kv"><span class="k">薪资</span><span class="v">${esc(j.salary||'未披露')}${j.salary_max?` <span style="color:var(--text3)">≈ ${money(j.salary_min)}–${money(j.salary_max)}/年 (${moneyCny(j.salary_min)}–${moneyCny(j.salary_max)})</span>`:''}</span></div>
+    <div class="kv"><span class="k">地点</span><span class="v">${esc(j.city||'未写')}</span></div>
+    <div class="kv"><span class="k">来源</span><span class="v">${esc(channelName(j.channel))}</span></div>
+    ${skills?`<div class="tags" style="margin-top:10px">${skills}</div>`:''}
+  </div>`;
+
+  if (p) {
+    const vc = VERDICT_CLASS[p.verdict] || 'v-ok';
+    html += `<div class="verdict">
+      <div class="score ${vc}">${p.fit_score ?? '—'}</div>
+      <div><div class="vl ${vc}">${esc(p.verdict||'')}</div><div class="vs">${esc(p.one_liner||'')}</div></div>
+    </div>`;
+    html += `<div class="pane"><h4>能不能投</h4>
+      <div class="kv"><span class="k">中国大陆</span><span class="v">${esc(p.china_applicable||'未知')}</span></div>
+      <div class="kv"><span class="k">原因</span><span class="v">${esc(p.china_reason||'—')}</span></div>
+      <div class="kv"><span class="k">资历要求</span><span class="v">${esc(p.seniority||'—')}</span></div>
+      <div class="kv"><span class="k">薪资判断</span><span class="v">${esc(p.salary_note||'—')}</span></div>
+    </div>`;
+    const list = (arr, cls='') => (arr||[]).map(x => `<div class="bullet ${cls}">${esc(x)}</div>`).join('') || '<div class="bullet">—</div>';
+    html += `<div class="pane"><h4>技能匹配</h4>
+      <div class="kv"><span class="k">对得上</span><span class="v">${(p.stack_match||[]).join('、')||'—'}</span></div>
+      <div class="kv"><span class="k">缺什么</span><span class="v">${(p.stack_gap||[]).join('、')||'—'}</span></div>
+    </div>`;
+    html += _intentPane(p);
+    const src = (p.comment_sources||[]).join(' · ') || '未拉到外部评论';
+    html += `<div class="pane"><h4>职位画像</h4>
+      <div class="kv"><span class="k">评论来源</span><span class="v">${esc(src)}</span></div>
+      <div class="bullet">${esc(p.job_portrait||'旧画像没有这一项，点下面重新生成')}</div>
+    </div>`;
+    html += `<div class="pane"><h4>公司画像</h4><div class="bullet">${esc(p.company_profile||'信息不足')}</div></div>`;
+    if ((p.red_flags||[]).length) html += `<div class="pane"><h4>风险点</h4>${list(p.red_flags,'risk')}</div>`;
+    html += `<div class="pane"><h4>投递建议</h4>${list(p.apply_tips)}</div>`;
+    html += `<div class="pane"><h4>原始描述 · 质量${esc(p.info_quality||'')}</h4><div class="data-sub">${esc(j.description||'')}</div></div>`;
+  } else {
+    html += `<div class="gen-hint">还没生成画像。<br>点下面的按钮，用本机 Claude 订阅做一次综合评估。</div>`;
+    html += `<div class="pane"><h4>原始描述</h4><div class="data-sub">${esc(j.description||'（无）')}</div></div>`;
+  }
+  document.getElementById('detail-body').innerHTML = html;
+
+  const read = !!j.read_at;
+  document.getElementById('detail-foot').innerHTML = `
+    ${j.url?`<a class="act apply" href="${esc(j.url)}" target="_blank">查看原文 ↗</a>`:''}
+    <button class="act" id="btn-gen" onclick="genProfile(${j.id})">${p?'重新生成':'生成画像'}</button>
+    <button class="act ${read?'on save':''}" id="btn-read" onclick="toggleRead(${j.id})">${read?'✓ 已阅读':'标为已读'}</button>`;
+}
+
+async function genProfile(jobId, refresh) {
+  if (detail.generating) return;
+  detail.generating = true;
+  const btn = document.getElementById('btn-gen');
+  if (btn) { btn.textContent = '生成中…'; btn.disabled = true; }
+  snack('本机 Claude 正在评估，约 30–60 秒');
+  try {
+    const has = !!(detail.job && detail.job.profile);
+    const res = await fetch(`/api/jobs/${jobId}/profile${has?'?refresh=true':''}`, { method:'POST' });
+    if (!res.ok) throw new Error((await res.json()).detail || '生成失败');
+    const data = await res.json();
+    detail.job.profile = data.profile;
+    renderDetail();
+    snack(data.cached ? '读取已有画像' : '画像已生成');
+  } catch (e) {
+    snack(e.message || '生成失败');
+    if (btn) { btn.textContent = '生成画像'; btn.disabled = false; }
+  } finally {
+    detail.generating = false;
+  }
+}
+
+async function toggleRead(jobId) {
+  try {
+    const data = await fetch(`/api/jobs/${jobId}/read`, { method:'POST' }).then(r => r.json());
+    detail.job.read_at = data.read ? new Date().toISOString() : null;
+    renderDetail();
+    snack(data.read ? '已标记为读过' : '已取消已读');
+    loadMarkIndex();
+  } catch { snack('操作失败'); }
+}
+
+// ══ 我的：数据统计 ══
+async function renderMineStats() {
+  const el = document.getElementById('mine-stats');
+  if (!el) return;
+  try {
+    const st = await fetch('/api/jobs/salary-stats').then(r => r.json());
+    const max = Math.max(...st.buckets.map(b => b.count), 1);
+    const bars = st.buckets.map(b => `<div class="bar-row">
+      <span class="lbl">${esc(b.label)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(b.count/max*100).toFixed(1)}%"></div></div>
+      <span class="num">${b.count}</span></div>`).join('');
+    el.innerHTML = `<div class="pane">
+      <h4>薪资分布 · 全库 ${st.total.toLocaleString()} 条</h4>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="v">${money(st.median)}<br><span style="font-size:11px;color:var(--text3)">${moneyCny(st.median)}</span></div><div class="k">中位数</div></div>
+        <div class="stat-box"><div class="v">${money(st.p25)}–${money(st.p75)}<br><span style="font-size:11px;color:var(--text3)">${moneyCny(st.p25)}–${moneyCny(st.p75)}</span></div><div class="k">四分位区间</div></div>
+        <div class="stat-box"><div class="v">${st.disclose_rate}%</div><div class="k">披露率</div></div>
+      </div>
+      <div class="bars">${bars}</div>
+      <div style="color:var(--text3);font-size:11.5px;margin-top:10px;line-height:1.6">
+        按年薪美元折算，时薪/月薪已换算。${(st.total - st.disclosed).toLocaleString()} 条没写薪资。</div>
+    </div>
+    <div class="pane"><h4>我的进度</h4>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="v">${marks.saved.size}</div><div class="k">收藏</div></div>
+        <div class="stat-box"><div class="v">${marks.archived.size}</div><div class="k">归档</div></div>
+        <div class="stat-box"><div class="v" id="stat-read">0</div><div class="k">已读</div></div>
+      </div>
+    </div>`;
+    const rd = document.getElementById('stat-read');
+    if (rd) rd.textContent = marks.read.size;
+  } catch (e) {
+    el.innerHTML = `<div class="pane"><div class="empty">统计加载失败</div></div>`;
+  }
+}
 
 // ══ mined_accounts 查/删（渠道下 AI 挖到的账号 + 标签 + 置信度） ══
 async function onChannelFilterChange() {
@@ -427,14 +1249,19 @@ async function deleteAccount(id, el) {
 
 // ══ Channel config — Step 1: picker（按板块分组，一个板块对应一个下游 app） ══
 let _boards = null;
+let _channelStatus = {};
 
 async function showChannelPicker() {
-  document.getElementById('config-title').innerHTML = '<span class="title-fx">渠道配置</span>';
   const body = document.getElementById('config-body');
   body.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
   try {
-    const [sr, cr] = await Promise.all([fetch('/api/channels/schema').then(r=>r.json()), fetch('/api/channels/config').then(r=>r.json())]);
+    const [sr, cr, st] = await Promise.all([
+      fetch('/api/channels/schema').then(r=>r.json()),
+      fetch('/api/channels/config').then(r=>r.json()),
+      fetch('/api/channels/status').then(r=>r.json()),
+    ]);
     _schema = sr.schema; _cfgs = cr.channels; _boards = sr.boards || {};
+    _channelStatus = st.channels || {};
 
     const byBoard = {};
     Object.entries(_schema).forEach(([id, s]) => {
@@ -473,8 +1300,12 @@ function channelPickRow(id, s) {
   const filled = s.fields.filter(f=>f.required).every(f=>!!cfg[f.key]);
   const status = en && filled ? 'active' : en ? 'missing' : 'off';
   const badge = en && filled ? '已就绪' : en ? '待配置' : '未启用';
+  const stat = _channelStatus[id] || {};
+  const dataLine = stat.stored == null
+    ? '未产生数据'
+    : `库存 ${stat.stored} · 近90天 ${stat.recent||0} · 已评分 ${stat.scored_recent||0}`;
   return `<div class="ch-pick" onclick="showChannelConfig('${id}')">
-    <div class="ch-pick-info"><div class="ch-pick-name">${esc(s.name)}</div><div class="ch-pick-desc">${esc(s.description)}</div></div>
+    <div class="ch-pick-info"><div class="ch-pick-name">${esc(s.name)}</div><div class="ch-pick-desc">${esc(s.description)}</div><div class="pipeline-fresh">${dataLine}</div></div>
     <div class="ch-pick-right"><span class="badge ${status}">${badge}</span><span class="ch-arrow">›</span></div>
   </div>`;
 }
@@ -482,8 +1313,8 @@ function channelPickRow(id, s) {
 // ══ Channel config — Step 2: detail (增删改查) ══
 function showChannelConfig(chId) {
   const s = _schema[chId], cfg = _cfgs[chId] || {}, en = cfg.enabled ?? false;
-  document.getElementById('config-title').textContent = s.name;
   let html = `<div class="detail-header"><button class="btn-back" onclick="showChannelPicker()">‹</button><div class="detail-title">${esc(s.name)}</div></div>`;
+  html += renderChannelPipeline(chId, s);
   html += s.fields.map(f => renderField(chId, f, cfg[f.key] || f.default || '')).join('');
   if (chId === 'telegram') html += tgAccountsSection();
   html += `<div class="ch-footer-bar">
@@ -496,6 +1327,17 @@ function showChannelConfig(chId) {
   </div>`;
   document.getElementById('config-body').innerHTML = html;
   if (chId === 'telegram') setTimeout(loadTgAccounts, 50);
+}
+
+function renderChannelPipeline(chId, s) {
+  const steps = s.pipeline || ['渠道原始数据','标准化','去重入库','统一规则','页面展示'];
+  const flow = steps.map((step, i) => `${i?'<span class="pipeline-arrow">→</span>':''}<span class="pipeline-step">${esc(step)}</span>`).join('');
+  const stat = _channelStatus[chId] || {};
+  const latest = stat.latest_posted_at ? new Date(stat.latest_posted_at).toLocaleString('zh-CN') : '无';
+  const synced = stat.last_synced_at ? new Date(stat.last_synced_at).toLocaleString('zh-CN') : '从未同步';
+  return `<div class="pipeline-card"><div class="pipeline-title">数据处理白盒</div><div class="pipeline-flow">${flow}</div>
+    <div class="pipeline-stats"><div class="pipeline-stat"><b>${stat.stored||0}</b><span>原始库存</span></div><div class="pipeline-stat"><b>${stat.recent||0}</b><span>近90天</span></div><div class="pipeline-stat"><b>${stat.scored_recent||0}</b><span>已评分可筛</span></div></div>
+    <div class="pipeline-fresh">库内最新发布时间：${esc(latest)}<br>本库最后同步：${esc(synced)}</div></div>`;
 }
 
 function renderField(chId, f, val) {
@@ -598,6 +1440,166 @@ async function tgVerify(id){
     else if(d.need_2fa){document.getElementById(`2fa-${id}`).style.display='block';t.className='toast err';t.textContent='需要两步验证密码';}
     else{t.className='toast err';t.textContent=d.detail||'失败';}
   }catch(e){t.className='toast err';t.textContent=e.message;}
+}
+
+// ══ 实战：英语面试视频（详见 docs/interview_prep.md，围绕简历定位——Java 后端负责人/技术专家、分布式&大数据） ══
+// match：本机 Claude 订阅对着 docs/resumes/consolidated_2026.md（Java 后端负责人/技术专家，
+// Kafka/ES/Hadoop/Spark/Hive/Flink/Storm，多年带团队）逐条评估算出的匹配度，不是瞎编的固定值。
+const DRILL_GROUPS = [
+  { title: '系统设计 mock · 跟着候选人练口语', items: [
+    { id: '6fOoXT1HYxk', title: 'Design a Key-Value Store — Mock Interview w/ Microsoft SWE', channel: 'Exponent', match: 72, tags: ['系统设计', 'mock'] },
+    { id: 'yz1jtze4qr8', title: 'Design Yelp — Mock Interview w/ Meta Staff Engineer', channel: 'Exponent', match: 65, tags: ['系统设计', 'staff'] },
+    { id: 'KYExYE_9nIY', title: 'Design Reddit — System Design Mock Interview', channel: 'Exponent', match: 60, tags: ['系统设计', 'mock'] },
+    { id: 'IUrQ5_g3XKs', title: 'Design YouTube — w/ Ex-Meta Staff Engineer', channel: 'Exponent', match: 68, tags: ['系统设计', 'staff'] },
+    { id: 'pFTyGG4mORk', title: 'Design Yelp — Meta Staff Product Architecture Mock', channel: 'Hello Interview', match: 63, tags: ['系统设计', 'staff'] },
+    { id: 'o8nSXW-B7Rw', title: 'OpenAI & Meta Senior/Staff Mock: Design Online Auction', channel: 'Hello Interview', match: 74, tags: ['系统设计', 'staff'] },
+    { id: '3yW856jAbZA', title: 'Twitter System Design Mock Interview（Senior SWE）', channel: 'IGotAnOffer', match: 70, tags: ['系统设计', 'mock'] },
+  ]},
+  { title: '分布式深水区 · 对口 Kafka / Flink / ES 技术栈', items: [
+    { id: 'UNUz1-msbOM', title: 'System Design: Why is Kafka fast?', channel: 'ByteByteGo', match: 95, tags: ['Kafka'] },
+    { id: 'xP7YUk3lP7g', title: 'Kafka Raft (KRaft) — When ZooKeeper Fails', channel: 'Jordan Has No Life', match: 88, tags: ['Kafka', '共识算法'] },
+    { id: '4gLD2pKxo20', title: 'Two Phase Commit（EP13）', channel: 'Jordan Has No Life', match: 82, tags: ['分布式事务'] },
+    { id: 'wyGLz8CPdRQ', title: 'Exactly-Once Semantics: Distributed Transactions across Flink and Kafka', channel: 'Jordan Has No Life', match: 97, tags: ['Flink', 'Kafka'] },
+    { id: 'nJsVO84LCGs', title: 'How to Learn System Design（方法论/入门）', channel: 'Jordan Has No Life', match: 55, tags: ['方法论'] },
+    { id: '1ISRd0bS714', title: 'Message Queues in System Design Interviews w/ Meta Staff Engineer', channel: 'Exponent', match: 90, tags: ['消息队列', 'staff'] },
+    { id: 'Qay43Km1NwY', title: 'Distributed Message Queue (Kafka): System Design Interview（Stripe & Amazon Offers）', channel: '', match: 93, tags: ['Kafka', 'mock'] },
+  ]},
+  { title: 'EM / Staff behavioral · 对应「负责人」定位', items: [
+    { id: 'yJBXunVOWC4', title: 'Engineering Manager Mock Interview — Behavioral Round', channel: 'Hello Interview', match: 80, tags: ['behavioral', 'EM'] },
+    { id: 'pT5iCOUM2Us', title: 'EM Mock w/ Square Director of Engineering — "Time You Made a Mistake"', channel: 'Hello Interview', match: 78, tags: ['behavioral', 'EM'] },
+    { id: 'c3TE7h9gA4g', title: 'Senior FAANG Engineer Behavioral Mock Interview — With Analysis', channel: '', match: 75, tags: ['behavioral', 'senior'] },
+    { id: 'Nhw97fabuTM', title: 'How to Nail Big Tech Behavioral Interviews as a Senior Software Engineer', channel: '', match: 73, tags: ['behavioral', 'senior'] },
+    { id: 'bBvPQZmPXwQ', title: 'Behavioral Interview Discussion with Ex-Meta Hiring Committee Member', channel: '', match: 76, tags: ['behavioral', '评委视角'] },
+    { id: 'GxCD7Q_qDpU', title: 'Google Behavioral Interview With A Tech YouTuber', channel: '', match: 68, tags: ['behavioral'] },
+  ]},
+  { title: 'Java 技术面试专项 · Spring Boot / 微服务', items: [
+    { id: 'jWjWKAqQMCg', title: 'Java Development Mock Interview | Part 2', channel: 'Turing', match: 78, tags: ['Java', 'mock'] },
+    { id: 'sGg-mhUMbyA', title: 'Java Mock Interview | Interview Questions for Senior Java Developers', channel: 'Turing', match: 80, tags: ['Java', 'senior'] },
+    { id: 'yX2w-Sof95s', title: 'Java Interview Questions and Answers for Experienced | Live Mock', channel: '', match: 76, tags: ['Java', 'mock'] },
+    { id: 'PHIQJeKzMCU', title: 'Mock Interview 8+ Year Experience Java Developer | Spring Boot | Microservices', channel: 'Code Decode', match: 82, tags: ['Java', 'Spring Boot'] },
+    { id: 'xMlcsFLk-CU', title: 'Mock Interview 5+ Year Experienced | Spring Boot | Java | Microservice | System Design', channel: 'Code Decode', match: 84, tags: ['Java', '系统设计'] },
+    { id: 'AgM4UFkROQ0', title: 'Core Java Mock Interview Question and Answers', channel: 'Code Decode', match: 70, tags: ['Java'] },
+    { id: 'NAnHblN0zY4', title: 'Capgemini Java, Spring Boot, Microservices Interview Questions and Answers | Mock', channel: '', match: 75, tags: ['Java', 'Spring Boot'] },
+    { id: '9grEmpRfK0Y', title: 'Java Interview Prep — Spring Boot and Microservices Interview Questions | Live Mock', channel: '', match: 77, tags: ['Java', 'Spring Boot'] },
+    { id: 'Ccg79skn4UI', title: 'Top Java Microservices Interview Questions & Answers | Spring Boot Interview 2026', channel: '', match: 62, tags: ['Java', '微服务'] },
+  ]},
+  { title: '存储 / 消息队列补充 Q&A · Elasticsearch / Kafka / Redis / 数据工程', items: [
+    { id: 'KWrM9pk3jDo', title: 'Elasticsearch Interview Questions and Answers', channel: '', match: 85, tags: ['Elasticsearch'] },
+    { id: 'QNyjnwLY-lo', title: 'What is Elasticsearch? Interview Questions and Answers for Experienced', channel: 'Code Decode', match: 87, tags: ['Elasticsearch'] },
+    { id: 'HN37_U0UXf0', title: 'Apache Kafka Interview Questions | For Experienced | Kafka FAQs', channel: '', match: 90, tags: ['Kafka'] },
+    { id: '9LDYr8fm8Mw', title: 'Top 20 Apache Kafka Interview Questions and Answers for Beginners and Experienced', channel: '', match: 85, tags: ['Kafka'] },
+    { id: 'HGLtFOZLtNI', title: 'Kafka Interview Questions That Confuse Even Experienced Engineers', channel: '', match: 89, tags: ['Kafka'] },
+    { id: 'lFxlI1hEOQU', title: 'Redis Interview Questions and Answers', channel: '', match: 58, tags: ['Redis'] },
+    { id: 'myc4e4rSog0', title: 'Redis Interview Questions and Answers | Top 10 Q&A', channel: '', match: 55, tags: ['Redis'] },
+    { id: 'owkjQ9kPB_g', title: 'Mock Data Engineer Interview: SQL, Spark, Project & AWS Answers', channel: '', match: 80, tags: ['Spark', '数据工程'] },
+    { id: 'v9aCCn0pg2g', title: 'Data Engineering Interview Questions Answered and Explained', channel: '', match: 76, tags: ['数据工程'] },
+  ]},
+  { title: '面试全流程 · 自我介绍 / 谈薪 / 优缺点 / 系统设计入门', items: [
+    { id: '0PN_W-7fBRo', title: "How Successful Software Engineers Answer 'Tell Me About Yourself'", channel: '', match: 70, tags: ['自我介绍', '全流程'] },
+    { id: 'DSxhgejP0u4', title: 'How I Negotiated My $350k Facebook Offer', channel: '', match: 55, tags: ['谈薪'] },
+    { id: 'pvtJAnV8a1A', title: 'How to Negotiate Your Job Offer (Software Engineer)', channel: '', match: 58, tags: ['谈薪'] },
+    { id: 'cbngWLr7BC4', title: 'How to Negotiate a Big Tech Offer as a Software Engineer', channel: '', match: 56, tags: ['谈薪'] },
+    { id: 'l_p_eJcw23k', title: 'How to Answer "What Is Your Greatest Weakness?" + 5 Example Answers', channel: '', match: 60, tags: ['behavioral'] },
+    { id: 'miFRwNuCtes', title: 'Know Your Strengths and Weaknesses! In a Software Engineer Interview', channel: '', match: 62, tags: ['behavioral'] },
+    { id: 'XkQcge0ZZkY', title: '"What Are Your Strengths and Weaknesses" — Interview Question for Software Developers', channel: '', match: 60, tags: ['behavioral'] },
+    { id: 'i7twT3x5yv8', title: 'System Design Interview: A Step-By-Step Guide', channel: '', match: 68, tags: ['系统设计', '方法论'] },
+    { id: 'bUHFg8CZFws', title: 'System Design Interview — Step By Step Guide', channel: '', match: 66, tags: ['系统设计', '方法论'] },
+    { id: 'iUU4O1sWtJA', title: 'Beginner System Design Interview: Design Bitly w/ Ex-Meta Engineer', channel: '', match: 64, tags: ['系统设计', 'mock'] },
+    { id: 'HcC9Du6RWwk', title: 'How to Pass a System Design Interview (The 45-Minute Blueprint)', channel: '', match: 71, tags: ['系统设计', '方法论'] },
+    { id: 'r58Cf_kc_bY', title: 'How I Mastered System Design Interviews', channel: '', match: 65, tags: ['系统设计', '方法论'] },
+  ]},
+];
+
+const drillState = { q: '', results: [], nextToken: '', loading: false, searched: false };
+
+function renderDrill() {
+  if (drillState.searched) { renderDrillResults(); return; }
+  const el = document.getElementById('drill-body');
+  const note = `<div class="pane">
+    <h4>光看视频不够</h4>
+    <div class="data-sub">视频用来熟悉术语和节奏，正式面试前一定要上真人对练——
+    <a href="https://www.pramp.com" target="_blank">Pramp</a>（免费 peer-to-peer）或
+    <a href="https://interviewing.io" target="_blank">interviewing.io</a>（付费，真实工程师 + 录像反馈）。</div>
+  </div>`;
+  let n = 0;
+  el.innerHTML = note + `<div class="section-label">编辑精选 · 50 条已核实</div>` + DRILL_GROUPS.map(g => `
+    <div class="section-label">${esc(g.title)}</div>
+    ${g.items.map(v => drillRow(v, ++n)).join('')}
+  `).join('') + `<div class="section-label">搜关键词，实时拉 YouTube 结果 ↑</div>`;
+}
+
+function drillPreset(q) {
+  document.getElementById('drill-q').value = q;
+  drillSearch(true);
+}
+
+async function drillSearch(reset) {
+  const q = document.getElementById('drill-q').value.trim();
+  if (!q) return;
+  if (reset) { drillState.q = q; drillState.results = []; drillState.nextToken = ''; drillState.searched = true; }
+  if (drillState.loading) return;
+  drillState.loading = true;
+  const el = document.getElementById('drill-body');
+  if (reset) el.innerHTML = '<div class="center-spin"><div class="spin"></div></div>';
+  try {
+    const params = new URLSearchParams({ q: drillState.q, max_results: '20' });
+    if (drillState.nextToken) params.set('page_token', drillState.nextToken);
+    const res = await fetch(`/api/drill/search?${params}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    drillState.results = drillState.results.concat(data.videos || []);
+    drillState.nextToken = data.next_page_token || '';
+    renderDrillResults();
+  } catch (e) {
+    el.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  } finally {
+    drillState.loading = false;
+  }
+}
+
+function renderDrillResults() {
+  const el = document.getElementById('drill-body');
+  const list = drillState.results;
+  const rows = list.length
+    ? list.map((v, i) => drillRow({ id: v.id, title: v.title, channel: v.channel, tags: [] }, i + 1)).join('')
+    : '<div class="empty">没搜到，换个关键词试试</div>';
+  const more = drillState.nextToken
+    ? `<button class="btn-sm btn-ghost" style="width:100%;margin-top:4px" onclick="drillSearch(false)">加载更多</button>`
+    : (list.length ? '<div class="empty" style="padding:16px">到底了</div>' : '');
+  el.innerHTML = `<div class="list-head"><div class="list-title">「${esc(drillState.q)}」搜索结果 · ${list.length} 条</div>
+    <div class="latency" style="cursor:pointer" onclick="drillState.searched=false;renderDrill()">‹ 回到精选</div></div>${rows}${more}`;
+}
+
+function drillRow(v, idx) {
+  const tags = (v.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const hasMatch = v.match !== undefined && v.match !== null;
+  const matchColor = v.match >= 85 ? 'var(--green)' : v.match >= 65 ? 'var(--indigo)' : 'var(--text3)';
+  return `<div class="card" id="drill-${v.id}">
+    <div class="data-head">
+      <div class="data-title">${idx ? `<span style="color:var(--text3);font-variant-numeric:tabular-nums">#${idx}</span> ` : ''}${esc(v.title)}</div>
+      <div class="data-badges">
+        ${hasMatch ? `<span class="data-badge" style="color:${matchColor};border-color:${matchColor}" title="跟简历技术栈/定位的匹配度，本机 Claude 评估">匹配 ${v.match}%</span>` : ''}
+        ${v.channel ? `<span class="data-badge">${esc(v.channel)}</span>` : ''}
+      </div>
+    </div>
+    ${tags ? `<div class="tags">${tags}</div>` : ''}
+    <div id="player-${v.id}"></div>
+    <div class="row-actions">
+      <button class="act" onclick="toggleDrillPlay('${v.id}', this)">▶ 播放</button>
+      <a class="act apply" href="https://www.youtube.com/watch?v=${v.id}" target="_blank">YouTube 打开 →</a>
+    </div>
+  </div>`;
+}
+
+function toggleDrillPlay(id, btn) {
+  const holder = document.getElementById(`player-${id}`);
+  if (holder.innerHTML) {
+    holder.innerHTML = '';
+    btn.textContent = '▶ 播放';
+    return;
+  }
+  holder.innerHTML = `<iframe width="100%" height="200" style="border-radius:12px;margin:2px 0 10px;display:block" src="https://www.youtube-nocookie.com/embed/${id}" title="video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  btn.textContent = '▲ 收起';
 }
 
 // ══ Helpers ══

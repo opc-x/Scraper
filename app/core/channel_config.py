@@ -164,7 +164,35 @@ CHANNEL_SCHEMA = {
             },
         ],
     },
+    "v2ex": {
+        "name": "V2EX",
+        "board": "job",
+        "description": "「酷工作」节点，公开 Atom feed，不需要 key/登录态，社区自发招聘贴中英混杂",
+        "fields": [],
+    },
+    "eleduck": {
+        "name": "电鸭",
+        "board": "job",
+        "description": "公开招聘 API，无需登录；采集近 90 天技术职位，详情与发布时间可追溯",
+        "fields": [],
+    },
 }
+
+CHANNEL_PIPELINES = {
+    "boss": ["登录态", "页面 API", "字段标准化", "去重入库", "90 天门禁", "匹配评分"],
+    "telegram": ["频道消息", "关键词预筛", "AI 抽取", "去重入库", "90 天门禁", "匹配评分"],
+    "discord": ["频道消息", "关键词预筛", "AI 抽取", "去重入库", "90 天门禁", "匹配评分"],
+    "x": ["搜索/账号", "页面帖子", "AI 抽取", "去重入库", "90 天门禁", "匹配评分"],
+    "youtube": ["Data API", "标题/简介", "面试素材", "不进入职位库"],
+    "liepin": ["尚未实现", "无采集器", "不产生职位数据"],
+    "zhilian": ["尚未实现", "无采集器", "不产生职位数据"],
+    "v2ex": ["公开 Atom/分页", "技术岗预筛", "正文解析", "去重入库", "90 天门禁", "匹配评分"],
+    "eleduck": ["公开 JSON API", "近 90 天分页", "技术岗预筛", "详情/摘要", "去重入库", "匹配评分"],
+}
+
+for _channel_id, _pipeline in CHANNEL_PIPELINES.items():
+    if _channel_id in CHANNEL_SCHEMA:
+        CHANNEL_SCHEMA[_channel_id]["pipeline"] = _pipeline
 
 
 _table_ensured = False

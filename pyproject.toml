@@ -18,6 +18,7 @@ dependencies = [
     "telethon>=1.36.0",
     "boto3>=1.35.0",
     "sqlalchemy-libsql>=0.2.0",
+    "browser-cookie3>=0.20.0",
 ]
 
 [project.optional-dependencies]

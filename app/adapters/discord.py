@@ -33,6 +33,7 @@ EXTRACT_PROMPT = """你是一个招聘信息提取助手。从下面的 Discord 
    - skills: 技能标签数组
    - description: 职位描述/要求摘要（保留关键信息）
    - contact: 联系方式（如有）
+   - source_url: 输入中提供的 Discord 原消息链接，必须原样返回
 
 只返回 JSON，不要其他内容。"""
 
@@ -96,7 +97,7 @@ class DiscordAdapter(BaseAdapter):
 
     async def _fetch_from_channels(
         self, user_token: str, channel_ids: list[str], keyword: str
-    ) -> list[str]:
+    ) -> list[dict]:
         messages = []
         keyword_lower = keyword.lower() if keyword else ""
         headers = self._auth_headers(user_token)
@@ -129,7 +130,10 @@ class DiscordAdapter(BaseAdapter):
                             continue
                         if keyword_lower and keyword_lower not in text.lower():
                             continue
-                        messages.append(text)
+                        message_id = str(msg.get("id") or "")
+                        guild_id = str(msg.get("guild_id") or "@me")
+                        source_url = f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+                        messages.append({"text": text, "source_url": source_url})
                 except Exception as e:
                     logger.warning("Failed to fetch from channel %s: %s", channel_id, e)
 
@@ -147,12 +151,14 @@ class DiscordAdapter(BaseAdapter):
         except Exception:
             return [source_id]
 
-    async def _extract_jobs_with_llm(self, cfg: dict, messages: list[str]) -> list[Job]:
+    async def _extract_jobs_with_llm(self, cfg: dict, messages: list[dict]) -> list[Job]:
         api_key = cfg.get("llm_api_key", "")
         if not api_key:
             return []
 
-        batch_text = "\n\n---\n\n".join(messages[:50])
+        batch_text = "\n\n---\n\n".join(
+            f"source_url: {item['source_url']}\nmessage:\n{item['text']}" for item in messages[:50]
+        )
 
         endpoint = LLM_ENDPOINTS["deepseek"]
         model = LLM_MODELS["deepseek"]
@@ -215,7 +221,7 @@ class DiscordAdapter(BaseAdapter):
                     education=item.get("education", ""),
                     skills=item.get("skills", []),
                     description=desc,
-                    url="",
+                    url=str(item.get("source_url") or "")[:512],
                     raw=item,
                 )
             )
