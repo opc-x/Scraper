@@ -16,6 +16,13 @@ AI-native 多渠道数据挖掘服务 — 基于优质数据源做数据接入�
 | 登录态持久化 | Cloudflare R2（Chromium profile 回传/拉取，见 `app/infra/r2.py`） |
 | 部署 | 本机 Mac 常驻 + Cloudflare Tunnel（`scraper.opc-x.org`）。Azure ACI 已停用自动部署，`.github/workflows/deploy.yml` 改为手动触发（`workflow_dispatch`），避免每次 push 把 DNS 改回 Azure IP 跟本机隧道打架；历史踩坑记录见 `docs/azure-aci-deploy.md` |
 
+## iOS PWA 视口与底栏（禁止回归）
+
+- `frontend/index.html` 禁止加入 `viewport-fit=cover`，`apple-mobile-web-app-status-bar-style` 必须保持 `default`。
+- 真机 standalone 模式下，`cover` + `black-translucent` 会缩短 WebView，但 `env(safe-area-inset-*)` 仍返回 `0`，结果是整个页面和 fixed 底栏上移，屏幕底部留下死区；这不是导航栏自身高度问题。
+- 让 iOS 自己收缩视口，底栏保持 `bottom: 0`；不要用 `screen.height`、视口高度差或额外 padding 猜安全区。`env(safe-area-inset-bottom, 0px)` 只用于能正确上报 inset 的平台。
+- 验证必须使用真机“添加到主屏幕”后的 PWA。完整事故记录和已验证实现见 `/Users/cuijian/opc-x/Ogden850App/CLAUDE.md` 的 “PWA viewport & safe area”。
+
 ## 本地 AI 挖掘环境（重要，别搞反架构）
 
 **数据挖掘（抓取 + AI 打标签/打分/置信度评估）重度依赖本机 Mac 环境跑。因为现在部署形态本身就是本机 Mac + Cloudflare Tunnel（不是 Azure 了），"生产"和"本机"是同一台机器，`app/api/routes/jobs.py`、`scripts/score_jobs.py` 这类直接 `subprocess` 调 `claude` CLI 的代码能正常跑，不是架构违规。**

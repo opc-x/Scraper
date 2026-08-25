@@ -163,6 +163,7 @@ class EleduckAdapter(BaseAdapter):
         max_age_days: int = DEFAULT_MAX_AGE_DAYS,
         min_jobs: int = DEFAULT_MIN_JOBS,
         fetch_details: bool = False,
+        java_title_only: bool = False,
     ) -> list[Job]:
         cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
         candidates: dict[str, dict] = {}
@@ -196,7 +197,15 @@ class EleduckAdapter(BaseAdapter):
                 break
             page += 1
 
-        if len(candidates) < min_jobs:
+        if java_title_only:
+            from app.core.job_derive import java_in_title
+
+            candidates = {
+                pid: post for pid, post in candidates.items()
+                if java_in_title(post.get("full_title") or post.get("title") or "")
+            }
+
+        if min_jobs and len(candidates) < min_jobs:
             raise RuntimeError(
                 f"电鸭近 {max_age_days} 天仅找到 {len(candidates)} 条技术职位，"
                 f"低于要求的 {min_jobs} 条"

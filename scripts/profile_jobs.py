@@ -22,7 +22,7 @@ from app.core.job_profile import profile_fields, render_prompt
 from app.core.resume import resume_text
 from app.db.connection import SessionLocal
 from app.db.schema import JobMark, JobProfile, ScrapedJob
-from app.infra.local_ai import run_sync
+from app.infra.local_ai import LocalAiError, run_sync
 
 NON_JOB_PHRASES = (
     "hey job seekers", "job roundup", "weekly jobs", "multiple openings",
@@ -82,9 +82,12 @@ def _generate_one(row_id: int, title: str, company: str, salary: str, city: str,
         city=city, skills=skills if isinstance(skills, list) else [],
         channel=channel, description=description, comments=comments,
     )
-    data = run_sync(prompt, engine=engine, timeout=timeout)
-    if data is not None:
-        data["comment_sources"] = sources
+    try:
+        data = run_sync(prompt, engine=engine, timeout=timeout)
+    except LocalAiError as exc:
+        print(f"[ai] id={row_id} {exc}", flush=True)
+        return row_id, None
+    data["comment_sources"] = sources
     return row_id, data
 
 

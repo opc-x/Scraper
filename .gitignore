@@ -9,6 +9,8 @@ channels.yaml
 .venv/
 venv/
 *.db
+*.db-shm
+*.db-wal
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/
@@ -16,3 +18,8 @@ venv/
 .wrangler/
 docs/
 !docs/azure-aci-deploy.md
+app/static/
+frontend/node_modules/
+frontend/dist/
+data/
+.playwright-mcp/

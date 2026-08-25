@@ -53,7 +53,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit
 # （店长岗也能带上 dev 标签），所以只认标题，不看 tags 和描述。
 ROLE_RE = re.compile(
     r"\b("
-    r"engineer|engineering|developer|programmer|coder|"
+    r"java|engineer|engineering|developer|programmer|coder|разработчик|programador|"
     r"devops|sre|site reliability|platform|infrastructure|"
     r"back[- ]?end|front[- ]?end|full[- ]?stack|"
     r"software architect|solutions architect|cloud architect|data architect|"
@@ -62,7 +62,9 @@ ROLE_RE = re.compile(
     r"ios developer|android developer|mobile engineer|"
     r"security engineer|blockchain|smart contract|"
     r"cto|tech lead|technical lead|staff engineer|principal engineer"
-    r")\b", re.I)
+    r")\b|工程师|开发",
+    re.I,
+)
 # 命中这些一律排除，优先级高于 ROLE_RE（"Security Guard" 别被 security 带进来）
 NON_TECH_RE = re.compile(
     r"\b(nurse|practitioner|physician|specimen|collector|driver|caregiver|therapist|"
@@ -158,12 +160,18 @@ def _rss_field(block: str, key: str) -> str:
     return _strip(m.group(1)) if m else ""
 
 
+def _wwr_url(cat: str) -> str:
+    if cat == "remote-jobs":
+        return "https://weworkremotely.com/remote-jobs.rss"
+    return WWR_RSS.format(cat=cat)
+
+
 async def fetch_wwr(client: httpx.AsyncClient, categories: list[str] | None = None) -> list[Job]:
     jobs: list[Job] = []
     seen: set[str] = set()
     for cat in (categories or WWR_CATEGORIES):
         try:
-            r = await client.get(WWR_RSS.format(cat=cat), headers=UA, timeout=30)
+            r = await client.get(_wwr_url(cat), headers=UA, timeout=30)
             r.raise_for_status()
         except Exception as e:  # noqa: BLE001
             logger.warning("WWR %s 拉取失败: %s", cat, e)

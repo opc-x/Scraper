@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 
@@ -30,6 +31,7 @@ EXTRACT_PROMPT = """你是一个招聘信息提取助手。从下面的内容中
    - skills: 技能标签数组
    - description: 职位描述/要求摘要（保留关键信息）
    - contact: 联系方式（如有）
+   - source_url: 输入中提供的原文链接，必须原样返回
 
 只返回 JSON，不要其他内容。"""
 
@@ -89,10 +91,12 @@ def parse_jobs(content: str, channel: str, id_prefix: str) -> list[Job]:
         desc = item.get("description", "")
         if contact:
             desc = f"{desc}\n联系方式: {contact}" if desc else f"联系方式: {contact}"
+        source_url = str(item.get("source_url") or item.get("url") or "")
+        dedup_key = f"{title}|{item.get('company', '')}|{source_url}".encode()
         jobs.append(
             Job(
                 channel=channel,
-                external_id=f"{id_prefix}_{hash(title + item.get('company', '')) & 0xFFFFFFFF:08x}",
+                external_id=f"{id_prefix}_{hashlib.md5(dedup_key).hexdigest()[:16]}",
                 title=title,
                 company=item.get("company", "未知"),
                 salary=item.get("salary", ""),
@@ -101,7 +105,7 @@ def parse_jobs(content: str, channel: str, id_prefix: str) -> list[Job]:
                 education=item.get("education", ""),
                 skills=item.get("skills", []),
                 description=desc,
-                url="",
+                url=str(item.get("source_url") or item.get("url") or "")[:512],
                 raw=item,
             )
         )

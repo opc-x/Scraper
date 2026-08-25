@@ -8,6 +8,7 @@ class SearchRequest(BaseModel):
     salary_max: int | None = None
     channel: str = "boss"
     page: int = 1
+    within_days: int = 90
 
 
 class Job(BaseModel):
@@ -16,6 +17,7 @@ class Job(BaseModel):
     title: str
     company: str
     salary: str
+    salary_cny: str = ""
     city: str
     experience: str = ""
     education: str = ""

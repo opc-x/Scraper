@@ -1,7 +1,12 @@
 import logging
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
+from app.core import value_tags as value_tags_lib
+from app.core.job_derive import apply_derived, matches_target_lens
+from app.core.job_origin import city_from_discord_text, origin_url
 from app.core.models import Job
+from app.core.quality_report import sync_reports
 from app.db.connection import SessionLocal
 from app.db.schema import MinedAccount, ScrapedJob, XAccount
 
@@ -107,19 +112,42 @@ PERSIST_BATCH_SIZE = 25
 
 
 def _parse_posted_at(job: Job) -> datetime | None:
-    raw_posted_at = (job.raw or {}).get("posted_at") or (job.raw or {}).get("published_at")
-    if not raw_posted_at:
+    raw = job.raw or {}
+    raw_posted_at = (
+        raw.get("posted_at")
+        or raw.get("published_at")
+        or raw.get("published")
+        or raw.get("date")
+        or raw.get("created_at")
+        or raw.get("ts")
+        or raw.get("epoch")
+    )
+    if raw_posted_at is None or raw_posted_at == "":
         return None
+    if isinstance(raw_posted_at, (int, float)) or (
+        isinstance(raw_posted_at, str) and raw_posted_at.strip().replace(".", "", 1).isdigit()
+    ):
+        ts = float(raw_posted_at)
+        if 1e12 <= ts < 1e14:
+            ts /= 1000
+        if 1e9 <= ts < 1e11:
+            return datetime.utcfromtimestamp(ts)
     try:
         posted_at = datetime.fromisoformat(str(raw_posted_at).replace("Z", "+00:00"))
         if posted_at.tzinfo:
             posted_at = posted_at.astimezone(timezone.utc).replace(tzinfo=None)
         return posted_at
     except ValueError:
-        return None
+        try:
+            posted_at = parsedate_to_datetime(str(raw_posted_at))
+            if posted_at.tzinfo:
+                posted_at = posted_at.astimezone(timezone.utc).replace(tzinfo=None)
+            return posted_at
+        except (TypeError, ValueError):
+            return None
 
 
-def persist_scraped_jobs(jobs: list[Job]) -> None:
+def persist_scraped_jobs(jobs: list[Job], *, lens_only: bool = False) -> int:
     """一个连接跑到底，只按 PERSIST_BATCH_SIZE 分批 commit（不重开连接/session）。
 
     Turso 远程每次查询往返有明显延迟，之前对每条 job 单独 SELECT 一次存在性、
@@ -130,11 +158,15 @@ def persist_scraped_jobs(jobs: list[Job]) -> None:
     也有几秒的握手开销，所以全程复用同一个 session。
     """
     if not SessionLocal or not jobs:
-        return
+        return 0
 
     db = SessionLocal()
+    kept = 0
     persisted_any = False
     try:
+        approved_tags = value_tags_lib.list_approved(db)
+        manual_map = value_tags_lib.load_manual_map(db)
+
         by_channel: dict[str, list[Job]] = {}
         for job in jobs:
             by_channel.setdefault(job.channel, []).append(job)
@@ -158,40 +190,71 @@ def persist_scraped_jobs(jobs: list[Job]) -> None:
                 for job in batch:
                     parsed = _parse_posted_at(job)
                     existing = existing_by_key.get((job.channel, job.external_id))
+                    city = (job.city or "").strip()
+                    if not city and job.channel == "discord":
+                        city = city_from_discord_text(job.description or "")
+                    resolved_url = origin_url(
+                        job.channel, job.external_id, job.url or "",
+                        job.raw if isinstance(job.raw, dict) else {},
+                        job.description or "",
+                    )
                     if existing:
                         existing.title = job.title
                         existing.company = job.company
                         existing.salary = job.salary
-                        existing.city = job.city
+                        existing.salary_cny = getattr(job, "salary_cny", "") or ""
+                        existing.city = city
                         existing.experience = job.experience
                         existing.education = job.education
                         existing.skills = job.skills
                         existing.description = job.description
-                        existing.url = job.url
+                        existing.url = resolved_url or existing.url
                         existing.raw = job.raw
                         existing.last_seen_at = datetime.utcnow()
                         if parsed:
                             existing.posted_at = parsed
                         elif not existing.posted_at:
                             existing.posted_at = existing.first_seen_at or datetime.utcnow()
+                        target_row = existing
                     else:
-                        db.add(
-                            ScrapedJob(
-                                channel=job.channel,
-                                external_id=job.external_id,
-                                title=job.title,
-                                company=job.company,
-                                salary=job.salary,
-                                city=job.city,
-                                experience=job.experience,
-                                education=job.education,
-                                skills=job.skills,
-                                description=job.description,
-                                url=job.url,
-                                raw=job.raw,
-                                posted_at=parsed or datetime.utcnow(),
-                            )
+                        target_row = ScrapedJob(
+                            channel=job.channel,
+                            external_id=job.external_id,
+                            title=job.title,
+                            company=job.company,
+                            salary=job.salary,
+                            salary_cny=getattr(job, "salary_cny", "") or "",
+                            city=city,
+                            experience=job.experience,
+                            education=job.education,
+                            skills=job.skills,
+                            description=job.description,
+                            url=resolved_url,
+                            raw=job.raw,
+                            posted_at=parsed,
                         )
+                        db.add(target_row)
+                    manual_ids = manual_map.get((job.channel, job.external_id), set())
+                    findings = apply_derived(
+                        target_row, approved_tags=approved_tags, manual_ids=manual_ids,
+                    )
+                    if lens_only and not matches_target_lens(target_row):
+                        if existing:
+                            db.delete(existing)
+                        else:
+                            db.expunge(target_row)
+                        continue
+                    if lens_only:
+                        target_row.filtered_out = False
+                    db.flush()
+                    kept += 1
+                    sync_reports(
+                        db,
+                        channel=target_row.channel,
+                        external_id=target_row.external_id,
+                        scraped_job_id=target_row.id,
+                        findings=findings,
+                    )
                 db.commit()
                 persisted_any = True
             except Exception as e:
@@ -209,3 +272,4 @@ def persist_scraped_jobs(jobs: list[Job]) -> None:
         from app.api.routes.scraped import invalidate_scraped_cache
 
         invalidate_scraped_cache()
+    return kept

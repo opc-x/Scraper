@@ -31,6 +31,42 @@ class ChannelConfig(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+class ChannelSyncRun(Base):
+    """渠道手动同步任务；状态与报告持久化，关闭前端后仍可恢复。"""
+
+    __tablename__ = "channel_sync_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(16), default="queued", index=True)
+    keyword: Mapped[str] = mapped_column(String(128), default="")
+    city: Mapped[str] = mapped_column(String(64), default="")
+    query: Mapped[str] = mapped_column(Text, default="")
+    parsed_query: Mapped[dict] = mapped_column(JSON, default=dict)
+    pulled: Mapped[int] = mapped_column(Integer, default=0)
+    coverage: Mapped[str] = mapped_column(String(256), default="")
+    error: Mapped[str] = mapped_column(Text, default="")
+    logs: Mapped[dict] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ChannelSyncPreset(Base):
+    """高频抓取查询预设；只是召回参数，不是职位判断规则。"""
+
+    __tablename__ = "channel_sync_presets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    query: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
 
@@ -113,6 +149,7 @@ class ScrapedJob(Base):
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     company: Mapped[str] = mapped_column(String(256), nullable=False)
     salary: Mapped[str] = mapped_column(String(64), default="")
+    salary_cny: Mapped[str] = mapped_column(String(64), default="")  # 人民币可读口径，给中国人看的
     city: Mapped[str] = mapped_column(String(64), default="")
     experience: Mapped[str] = mapped_column(String(64), default="")
     education: Mapped[str] = mapped_column(String(64), default="")
@@ -124,6 +161,26 @@ class ScrapedJob(Base):
     match_score: Mapped[int] = mapped_column(Integer, default=-1)  # 跟简历的匹配度 0-100，-1 = 还没算
     first_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # 以下是写时预计算的衍生字段（见 app/core/job_derive.py），列表/筛选接口只读这些列，
+    # 不再对全量数据现场跑正则——避免读接口的响应时间随数据量线性变长。
+    # value_score/value_tags 依赖用户可编辑的 value_tags 规则库，规则变更时批量重算一次
+    # （见 app/api/routes/value_tags.py），不是每次读都算。
+    core_tags: Mapped[dict] = mapped_column(JSON, default=list)
+    regions: Mapped[dict] = mapped_column(JSON, default=list)
+    is_remote: Mapped[bool] = mapped_column(Boolean, default=False)
+    interest_tags: Mapped[dict] = mapped_column(JSON, default=list)
+    preference_score: Mapped[int] = mapped_column(Integer, default=0)
+    salary_min_usd: Mapped[int] = mapped_column(Integer, default=0)
+    salary_max_usd: Mapped[int] = mapped_column(Integer, default=0)
+    salary_bucket: Mapped[str] = mapped_column(String(32), default="")
+    data_quality_ok: Mapped[bool] = mapped_column(Boolean, default=True)
+    value_score: Mapped[int] = mapped_column(Integer, default=50)
+    value_tags: Mapped[dict] = mapped_column(JSON, default=list)
+    derived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    filtered_out: Mapped[bool] = mapped_column(Boolean, default=False)  # 入库门槛未达标，见 job_derive.evaluate_ingest_gate
+    ai_gate_score: Mapped[int] = mapped_column(Integer, default=-1)  # AI 对入库门槛的复核分 0-100，-1=还没跑，见 scripts/rescue_ingest_gate.py
+    ai_gate_reason: Mapped[str] = mapped_column(String(160), default="")
 
 
 class MinedAccount(Base):
@@ -190,3 +247,191 @@ class TgClassifyCache(Base):
     tag: Mapped[str] = mapped_column(String(32), default="")
     reason: Mapped[str] = mapped_column(String(128), default="")
     classified_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Resume(Base):
+    """个人求职 app 的简历库：上传后统一转成 Markdown，给本机模型当底稿。"""
+
+    __tablename__ = "resumes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(128), nullable=False)
+    markdown: Mapped[str] = mapped_column(Text, default="")  # 原稿
+    final_markdown: Mapped[str] = mapped_column(Text, default="")  # SOP 优化后的最终稿
+    source_name: Mapped[str] = mapped_column(String(256), default="")
+    source_format: Mapped[str] = mapped_column(String(16), default="md")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ResumeVersion(Base):
+    """简历版本：原稿不动，每次采纳建议落一版，可看可删可切当前。"""
+
+    __tablename__ = "resume_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    resume_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    markdown: Mapped[str] = mapped_column(Text, default="")
+    note: Mapped[str] = mapped_column(String(256), default="")
+    model: Mapped[str] = mapped_column(String(16), default="")
+    is_current: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class ResumeAnalysis(Base):
+    """一次 SOP 分析落一份报告，可看可删可改标题。"""
+
+    __tablename__ = "resume_analyses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    resume_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    sop_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sop_name: Mapped[str] = mapped_column(String(128), default="")
+    title: Mapped[str] = mapped_column(String(128), default="")
+    findings: Mapped[dict] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ResumeSuggestion(Base):
+    """一轮优化建议：待定 / 采纳 / 不采纳。"""
+
+    __tablename__ = "resume_suggestions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    resume_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    model: Mapped[str] = mapped_column(String(16), default="")
+    title: Mapped[str] = mapped_column(String(128), default="")
+    quote: Mapped[str] = mapped_column(String(256), default="")
+    body: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    kind: Mapped[str] = mapped_column(String(16), default="optimize")  # analysis | optimize
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class ResumeSop(Base):
+    """一份 SOP 方案只对应一份分析报告。draft 可改，跑过分析就 used。"""
+
+    __tablename__ = "resume_sops"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    resume_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    brief: Mapped[str] = mapped_column(Text, default="")
+    models: Mapped[dict] = mapped_column(JSON, default=list)
+    steps: Mapped[dict] = mapped_column(JSON, default=list)
+    purpose: Mapped[str] = mapped_column(String(16), default="analyze")  # analyze | optimize
+    status: Mapped[str] = mapped_column(String(16), default="draft")  # draft | used
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ValueTag(Base):
+    """标签管理：用户拿大白话描述一个信号，本机 AI 转成正则规则，人工确认后才参与打分。
+    跟 core/resume.py 里硬编码的 PREFERENCE_RULES 是两套并行机制：那套是「简历/技术栈贴合」，
+    这套是用户自己可维护的信号库，按 category 分维度（目前只有"价值观"一个维度，
+    结构上留了口子给以后加别的维度），不写死在代码里。
+    """
+
+    __tablename__ = "value_tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    category: Mapped[str] = mapped_column(String(32), default="价值观")  # 标签所属维度
+    description: Mapped[str] = mapped_column(Text, nullable=False)  # 用户原话
+    label: Mapped[str] = mapped_column(String(64), nullable=False)
+    pattern: Mapped[str] = mapped_column(String(512), nullable=False)  # 正则，大小写不敏感
+    polarity: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 正面 / 0 中性 / -1 负面
+    weight: Mapped[int] = mapped_column(Integer, nullable=False)  # 5-30
+    rationale: Mapped[str] = mapped_column(Text, default="")  # AI 生成时给的解释，供人工确认时参考
+    status: Mapped[str] = mapped_column(String(16), default="draft")  # draft | approved
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False)  # True：每条职位都露出；加分标签未命中打红，减分标签未命中打绿
+    salary_below_usd: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # 非空时这条标签不用 pattern 正则判断，改成"披露的年薪折算 USD 低于这个数就命中"
+    # （没披露薪资的职位一律不算命中——没数据不等于低薪，不能瞎猜）
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class JobValueTag(Base):
+    """某条职位被补充打上的标签——跟正则自动命中是两回事，独立于打分规则，
+    source 区分历史人工选择（manual）、详情页 AI 辅助（ai_assist）和录入 AI（ai_ingest）。
+    参与价值观打分（跟自动命中同等对待），但不受正则约束。
+    """
+
+    __tablename__ = "job_value_tags"
+    __table_args__ = (UniqueConstraint("channel", "external_id", "tag_id", name="uq_job_value_tag"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    tag_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(String(16), default="manual")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class JobQualityReport(Base):
+    """职位文本质量痕迹：可疑/高置信问题都记一笔，可溯源。
+
+    severity=block 才会把 scraped_jobs.data_quality_ok 打成 False（列表默认藏）；
+    severity=suspect 只报案，不删不藏，避免误杀有效 JD。
+    """
+
+    __tablename__ = "job_quality_reports"
+    __table_args__ = (
+        UniqueConstraint("channel", "external_id", "kind", name="uq_job_quality_report"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    scraped_job_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False)  # block | suspect
+    reason: Mapped[str] = mapped_column(String(256), default="")
+    evidence: Mapped[str] = mapped_column(String(512), default="")
+    source: Mapped[str] = mapped_column(String(32), default="rule")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class JobRule(Base):
+    """系统硬规则表：匹配分权重/栈证据/硬顶、质量 block|suspect、召回信号。
+
+    跟 value_tags（用户可维护的价值观标签）分开：本表是产品口径，改权重/正则走这里，
+    业务代码统一 app.core.job_rules 读取，禁止再在各处写死正则。
+    """
+
+    __tablename__ = "job_rules"
+    __table_args__ = (UniqueConstraint("category", "key", name="uq_job_rule"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    # match_config | match_stack | match_signal | match_cap | match_verdict
+    # | quality_block | quality_suspect | recall
+    key: Mapped[str] = mapped_column(String(64), nullable=False)
+    label: Mapped[str] = mapped_column(String(128), default="")
+    pattern: Mapped[str] = mapped_column(String(1024), default="")
+    weight: Mapped[int] = mapped_column(Integer, default=0)
+    severity: Mapped[str] = mapped_column(String(16), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    rationale: Mapped[str] = mapped_column(Text, default="")
+    config: Mapped[dict] = mapped_column(JSON, default=dict)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )

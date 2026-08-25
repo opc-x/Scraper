@@ -13,3 +13,5 @@ __pycache__/
 *.session
 channels.yaml
 .chrome_profiles/
+frontend/node_modules/
+app/static/

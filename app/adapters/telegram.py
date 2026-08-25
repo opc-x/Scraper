@@ -1,9 +1,13 @@
+import hashlib
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 
 import httpx
+
 from app.adapters.base import BaseAdapter
 from app.core.channel_config import get_channel_config
+from app.core.job_origin import telegram_message_url
 from app.core.models import Job, SearchRequest
 from app.core.telegram_client import get_telegram_client
 
@@ -32,6 +36,7 @@ EXTRACT_PROMPT = """你是一个招聘信息提取助手。从下面的聊天消
    - skills: 技能标签数组
    - description: 职位描述/要求摘要（保留关键信息）
    - contact: 联系方式（如有）
+   - source_url: 输入中提供的 Telegram 原文链接，必须原样返回
 
 只返回 JSON，不要其他内容。"""
 
@@ -52,10 +57,13 @@ class TelegramAdapter(BaseAdapter):
         messages = []
 
         # 统一从 sources 字段读（兼容旧 group_ids/dm_users）
-        sources_raw = cfg.get("sources") or cfg.get("group_ids", "") + "\n" + cfg.get("dm_users", "")
+        sources_raw = (
+            cfg.get("sources")
+            or cfg.get("group_ids", "") + "\n" + cfg.get("dm_users", "")
+        )
         sources = [s.strip() for s in sources_raw.replace(",", "\n").split("\n") if s.strip()]
         if sources:
-            msgs = await self._fetch_from_entities(client, sources, req.keyword)
+            msgs = await self._fetch_from_entities(client, sources, req.keyword, req.within_days)
             messages.extend(msgs)
 
         if not messages:
@@ -66,13 +74,17 @@ class TelegramAdapter(BaseAdapter):
         if req.salary_min:
             jobs = [j for j in jobs if not j.salary or self._salary_above(j.salary, req.salary_min)]
         if req.city:
-            jobs = [j for j in jobs if not j.city or req.city in j.city or j.city in ("远程", "Remote", "")]
+            jobs = [
+                j
+                for j in jobs
+                if not j.city or req.city in j.city or j.city in ("远程", "Remote", "")
+            ]
 
         return jobs
 
     async def _fetch_from_entities(
-        self, client, refs: list[str], keyword: str
-    ) -> list[str]:
+        self, client, refs: list[str], keyword: str, within_days: int = 90
+    ) -> list[dict]:
         messages = []
         keyword_lower = keyword.lower() if keyword else ""
 
@@ -85,24 +97,39 @@ class TelegramAdapter(BaseAdapter):
 
                 entity = await client.get_entity(entity)
 
-                async for msg in client.iter_messages(entity, limit=100):
+                cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
+                async for msg in client.iter_messages(entity, limit=None):
+                    msg_date = msg.date
+                    if msg_date and msg_date < cutoff:
+                        break
                     if not msg.text or len(msg.text) < 20:
                         continue
                     if keyword_lower and keyword_lower not in msg.text.lower():
                         continue
-                    messages.append(msg.text)
+                    source_url = telegram_message_url(
+                        username=getattr(entity, "username", "") or "",
+                        entity_id=getattr(entity, "id", None),
+                        msg_id=getattr(msg, "id", None),
+                    )
+                    posted = msg_date.isoformat() if msg_date else ""
+                    messages.append({
+                        "text": f"posted_at: {posted}\n{msg.text}",
+                        "source_url": source_url,
+                    })
 
             except Exception as e:
                 logger.warning("Failed to fetch from %s: %s", ref, e)
 
         return messages
 
-    async def _extract_jobs_with_llm(self, cfg: dict, messages: list[str]) -> list[Job]:
+    async def _extract_jobs_with_llm(self, cfg: dict, messages: list[dict]) -> list[Job]:
         api_key = cfg.get("llm_api_key", "")
         if not api_key:
             return []
 
-        batch_text = "\n\n---\n\n".join(messages[:50])
+        batch_text = "\n\n---\n\n".join(
+            f"source_url: {item['source_url']}\nmessage:\n{item['text']}" for item in messages[:50]
+        )
 
         endpoint = LLM_ENDPOINTS["deepseek"]
         model = LLM_MODELS["deepseek"]
@@ -149,10 +176,12 @@ class TelegramAdapter(BaseAdapter):
             desc = item.get("description", "")
             if contact:
                 desc = f"{desc}\n联系方式: {contact}" if desc else f"联系方式: {contact}"
+            source_url = str(item.get("source_url") or item.get("url") or "")
+            dedup_key = f"{title}|{item.get('company', '')}|{source_url}".encode()
             jobs.append(
                 Job(
                     channel="telegram",
-                    external_id=f"tg_{hash(title + item.get('company', '')) & 0xFFFFFFFF:08x}",
+                    external_id=f"tg_{hashlib.md5(dedup_key).hexdigest()[:16]}",
                     title=title,
                     company=item.get("company", "未知"),
                     salary=item.get("salary", ""),
@@ -161,7 +190,7 @@ class TelegramAdapter(BaseAdapter):
                     education=item.get("education", ""),
                     skills=item.get("skills", []),
                     description=desc,
-                    url="",
+                    url=str(item.get("source_url") or item.get("url") or "")[:512],
                     raw=item,
                 )
             )

@@ -119,3 +119,23 @@ def bucket(annual_usd: int) -> str:
 
 
 BUCKET_ORDER = ["<60K", "60–100K", "100–150K", "150–200K", "200–300K", "300K+", "未披露"]
+
+# 展示用粗汇率，跟前端 format.ts 保持一致
+USD_CNY = 7.14
+
+
+def format_cny(lo_usd: int = 0, hi_usd: int = 0, *, salary_text: str = "") -> str:
+    """给人看的人民币年薪口径。优先从 USD 年薪折算；折算不出再原样返回空。"""
+    lo, hi = lo_usd or 0, hi_usd or 0
+    if not hi and not lo and salary_text:
+        lo, hi = parse(salary_text)
+    if not hi and not lo:
+        return ""
+    def _wan(n: int) -> str:
+        wan = n * USD_CNY / 10_000
+        if wan >= 10:
+            return f"{wan:.0f}万"
+        return f"{wan:.1f}万".rstrip("0").rstrip(".")
+    if lo and hi and lo != hi:
+        return f"约 {_wan(lo)}–{_wan(hi)}/年"
+    return f"约 {_wan(hi or lo)}/年"

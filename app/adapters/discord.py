@@ -1,9 +1,13 @@
+import hashlib
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 
 import httpx
+
 from app.adapters.base import BaseAdapter
 from app.core.channel_config import get_channel_config
+from app.core.job_origin import source_label
 from app.core.models import Job, SearchRequest
 
 logger = logging.getLogger(__name__)
@@ -18,7 +22,8 @@ LLM_MODELS = {
     "deepseek": "deepseek-chat",
 }
 
-EXTRACT_PROMPT = """你是一个招聘信息提取助手。从下面的 Discord 频道消息中提取职位信息（消息可能是英文）。
+EXTRACT_PROMPT = """你是一个招聘信息提取助手。
+从下面的 Discord 频道消息中提取职位信息（消息可能是英文）。
 
 要求：
 1. 只提取真实的招聘/求职信息，忽略闲聊、广告、培训
@@ -82,7 +87,9 @@ class DiscordAdapter(BaseAdapter):
         if not channel_ids:
             return []
 
-        messages = await self._fetch_from_channels(user_token, channel_ids, req.keyword)
+        messages = await self._fetch_from_channels(
+            user_token, channel_ids, req.keyword, req.within_days
+        )
         if not messages:
             return []
 
@@ -91,12 +98,16 @@ class DiscordAdapter(BaseAdapter):
         if req.salary_min:
             jobs = [j for j in jobs if not j.salary or self._salary_above(j.salary, req.salary_min)]
         if req.city:
-            jobs = [j for j in jobs if not j.city or req.city in j.city or j.city in ("远程", "Remote", "")]
+            jobs = [
+                j
+                for j in jobs
+                if not j.city or req.city in j.city or j.city in ("远程", "Remote", "")
+            ]
 
         return jobs
 
     async def _fetch_from_channels(
-        self, user_token: str, channel_ids: list[str], keyword: str
+        self, user_token: str, channel_ids: list[str], keyword: str, within_days: int = 90
     ) -> list[dict]:
         messages = []
         keyword_lower = keyword.lower() if keyword else ""
@@ -110,43 +121,131 @@ class DiscordAdapter(BaseAdapter):
 
             for channel_id in resolved_ids:
                 try:
-                    res = await http.get(
-                        f"{DISCORD_API}/channels/{channel_id}/messages",
-                        headers=headers,
-                        params={"limit": 100},
-                    )
-                    if res.status_code == 401:
-                        logger.error("Discord User Token 无效或已过期，请重新从浏览器复制")
-                        break
-                    if res.status_code == 403:
-                        logger.warning("Discord channel %s 无权限访问", channel_id)
-                        continue
-                    if res.status_code != 200:
-                        logger.warning("Discord channel %s fetch failed: %s", channel_id, res.text[:200])
-                        continue
-                    for msg in res.json():
-                        text = msg.get("content", "")
-                        if not text or len(text) < 20:
-                            continue
-                        if keyword_lower and keyword_lower not in text.lower():
-                            continue
-                        message_id = str(msg.get("id") or "")
-                        guild_id = str(msg.get("guild_id") or "@me")
-                        source_url = f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
-                        messages.append({"text": text, "source_url": source_url})
+                    before = ""
+                    cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
+                    while True:
+                        params = {"limit": 100}
+                        if before:
+                            params["before"] = before
+                        res = await http.get(
+                            f"{DISCORD_API}/channels/{channel_id}/messages",
+                            headers=headers,
+                            params=params,
+                        )
+                        if res.status_code == 401:
+                            logger.error("Discord User Token 无效或已过期，请重新从浏览器复制")
+                            break
+                        if res.status_code == 403:
+                            logger.warning("Discord channel %s 无权限访问", channel_id)
+                            break
+                        if res.status_code != 200:
+                            forum = await self._forum_threads(
+                                http, headers, channel_id, keyword_lower, within_days
+                            )
+                            if forum:
+                                messages.extend(forum)
+                            else:
+                                logger.warning(
+                                    "Discord channel %s fetch failed: %s",
+                                    channel_id,
+                                    res.text[:200],
+                                )
+                            break
+                        batch = res.json()
+                        if not batch:
+                            break
+                        reached_cutoff = False
+                        for msg in batch:
+                            timestamp = str(msg.get("timestamp") or "")
+                            try:
+                                posted = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                            except ValueError:
+                                posted = None
+                            if posted and posted < cutoff:
+                                reached_cutoff = True
+                                continue
+                            text = msg.get("content", "")
+                            if not text or len(text) < 20:
+                                continue
+                            if keyword_lower and keyword_lower not in text.lower():
+                                continue
+                            message_id = str(msg.get("id") or "")
+                            guild_id = str(msg.get("guild_id") or "@me")
+                            source_url = (
+                                f"https://discord.com/channels/{guild_id}/"
+                                f"{channel_id}/{message_id}"
+                            )
+                            messages.append({
+                                "text": f"posted_at: {timestamp}\n{text}",
+                                "source_url": source_url,
+                            })
+                        if reached_cutoff or len(batch) < 100:
+                            break
+                        before = str(batch[-1].get("id") or "")
+                        if not before:
+                            break
                 except Exception as e:
                     logger.warning("Failed to fetch from channel %s: %s", channel_id, e)
 
         return messages
 
-    async def _expand_if_guild(self, http: httpx.AsyncClient, headers: dict, source_id: str) -> list[str]:
+    async def _forum_threads(
+        self,
+        http: httpx.AsyncClient,
+        headers: dict,
+        channel_id: str,
+        keyword_lower: str,
+        within_days: int,
+    ) -> list[dict]:
+        """JobsBot 发在论坛频道：一条职位一个 thread，thread id 就是原文链接。"""
+        res = await http.get(
+            f"{DISCORD_API}/channels/{channel_id}/threads/archived/public",
+            headers=headers,
+            params={"limit": 100},
+        )
+        if res.status_code != 200:
+            return []
+        payload = res.json()
+        threads = payload.get("threads") if isinstance(payload, dict) else payload
+        if not isinstance(threads, list):
+            return []
+        cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
+        out = []
+        for thread in threads:
+            name = str(thread.get("name") or "")
+            if len(name) < 8:
+                continue
+            if keyword_lower and keyword_lower not in name.lower():
+                continue
+            ts = str(thread.get("thread_metadata", {}).get("create_timestamp") or thread.get("id") or "")
+            try:
+                posted = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except ValueError:
+                posted = None
+            if posted and posted < cutoff:
+                continue
+            thread_id = str(thread.get("id") or "")
+            guild_id = str(thread.get("guild_id") or "")
+            if not thread_id:
+                continue
+            source_url = (
+                f"https://discord.com/channels/{guild_id}/{thread_id}"
+                if guild_id
+                else f"https://discord.com/channels/@me/{channel_id}/{thread_id}"
+            )
+            out.append({"text": name, "source_url": source_url})
+        return out
+
+    async def _expand_if_guild(
+        self, http: httpx.AsyncClient, headers: dict, source_id: str
+    ) -> list[str]:
         try:
             res = await http.get(f"{DISCORD_API}/guilds/{source_id}/channels", headers=headers)
             if res.status_code != 200:
                 return [source_id]
             return [
                 ch["id"] for ch in res.json()
-                if ch.get("type") == 0  # 文字频道
+                if ch.get("type") in (0, 5, 15)  # 文字 / 公告 / 论坛（JobsBot 走论坛帖）
             ]
         except Exception:
             return [source_id]
@@ -209,10 +308,16 @@ class DiscordAdapter(BaseAdapter):
             desc = item.get("description", "")
             if contact:
                 desc = f"{desc}\n联系方式: {contact}" if desc else f"联系方式: {contact}"
+            url = str(item.get("source_url") or "")[:512]
+            raw = dict(item)
+            server = source_label("discord", raw, url)
+            if server:
+                raw["source_server"] = server
+            dedup_key = f"{title}|{item.get('company', '')}|{url}".encode()
             jobs.append(
                 Job(
                     channel="discord",
-                    external_id=f"dc_{hash(title + item.get('company', '')) & 0xFFFFFFFF:08x}",
+                    external_id=f"dc_{hashlib.md5(dedup_key).hexdigest()[:16]}",
                     title=title,
                     company=item.get("company", "未知"),
                     salary=item.get("salary", ""),
@@ -221,8 +326,8 @@ class DiscordAdapter(BaseAdapter):
                     education=item.get("education", ""),
                     skills=item.get("skills", []),
                     description=desc,
-                    url=str(item.get("source_url") or "")[:512],
-                    raw=item,
+                    url=url,
+                    raw=raw,
                 )
             )
         return jobs

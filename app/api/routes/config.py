@@ -64,7 +64,7 @@ async def update_config(body: dict):
         raise HTTPException(400, f"Unknown channel: {channel}")
 
     schema = CHANNEL_SCHEMA[channel]
-    valid_keys = {"enabled"} | {f["key"] for f in schema["fields"]}
+    valid_keys = {"enabled", "sync_query"} | {f["key"] for f in schema["fields"]}
 
     filtered = {}
     for k, v in body.items():

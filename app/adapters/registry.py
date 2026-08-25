@@ -23,7 +23,9 @@ def get_adapter(channel: str) -> BaseAdapter:
             case "eleduck":
                 _adapters[channel] = EleduckAdapter()
             case "x":
-                _adapters[channel] = XAdapter()
+                _adapters[channel] = XAdapter(channel="x")
+            case "x_zh":
+                _adapters[channel] = XAdapter(channel="x_zh")
             case "jobboards" | "remoteok" | "weworkremotely":
                 _adapters[channel] = JobBoardAdapter()
             case "v2ex":

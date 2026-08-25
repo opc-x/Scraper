@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  数据终端风：深色近黑 + 磷光绿单一强调色。数字（分数/薪资/计数）一律走等宽字体，
+  跟标题拉开层级；直角卡片靠边框分隔，不用阴影和大圆角。设计理念/画布见
+  https://claude.ai/code/artifact/86c41479-d162-400d-a9e5-6d726028dcb7
+*/
+:root {
+  --radius: 0.25rem;
+
+  --background: oklch(0.153 0.005 248.2);
+  --foreground: oklch(0.941 0.006 239.8);
+  --card: oklch(0.185 0.009 255.6);
+  --card-foreground: oklch(0.941 0.006 239.8);
+  --popover: oklch(0.211 0.012 254.1);
+  --popover-foreground: oklch(0.941 0.006 239.8);
+
+  --primary: oklch(0.895 0.176 158.5);
+  --primary-foreground: oklch(0.14 0.03 158.5);
+
+  --secondary: oklch(0.211 0.012 254.1);
+  --secondary-foreground: oklch(0.941 0.006 239.8);
+  --muted: oklch(0.211 0.012 254.1);
+  --muted-foreground: oklch(0.562 0.019 251);
+  --muted-foreground-dim: oklch(0.41 0.014 252.2);
+  --accent: oklch(0.895 0.176 158.5);
+  --accent-foreground: oklch(0.14 0.03 158.5);
+
+  --info: oklch(0.68 0.158 276.9);
+  --info-foreground: oklch(0.16 0.03 276.9);
+  --warning: oklch(0.862 0.139 82);
+  --warning-foreground: oklch(0.18 0.03 82);
+  --destructive: oklch(0.712 0.181 22.8);
+  --destructive-foreground: oklch(0.16 0.03 22.8);
+
+  --border: oklch(1 0 0 / 9%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.895 0.176 158.5 / 50%);
+
+  --chart-1: var(--primary);
+  --chart-2: var(--info);
+  --chart-3: var(--warning);
+  --chart-4: var(--destructive);
+  --chart-5: var(--accent);
+
+  --shadow-card: none;
+  --nav-h: 54px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 没有浅色模式，.dark 跟 :root 保持一致，只是为将来兼容 shadcn 生态组件留一个 hook */
+.dark {
+  --background: oklch(0.153 0.005 248.2);
+  --foreground: oklch(0.941 0.006 239.8);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: 0px;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 2);
+  --radius-pill: var(--radius);
+
+  --font-sans: "Inter Variable", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-heading: "Inter Variable", -apple-system, "PingFang SC", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+}
+
+/* 移动端 tap 高亮关掉，跟旧版一致 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

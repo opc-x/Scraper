@@ -12,6 +12,7 @@ import re
 from app.core.salary import parse as parse_salary
 
 RESUME_PATH = Path("docs/resumes/consolidated_2026.md")
+ACTIVE_RESUME_PATH = Path("data/resumes/active.md")
 
 # 打分口径写死在这儿，改口径就改这一处
 PROFILE = """求职者画像：
@@ -89,6 +90,10 @@ def preference_tags(*, title: str = "", description: str = "", salary: str = "",
 
 def resume_text(max_chars: int = 6000) -> str:
     """需要完整简历时才读文件（比如生成职位画像的深度评估）。"""
+    if ACTIVE_RESUME_PATH.exists():
+        text = ACTIVE_RESUME_PATH.read_text(encoding="utf-8").strip()
+        if text:
+            return text[:max_chars]
     if RESUME_PATH.exists():
         return RESUME_PATH.read_text(encoding="utf-8")[:max_chars]
     return PROFILE

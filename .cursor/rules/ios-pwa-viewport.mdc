@@ -1,0 +1,13 @@
+---
+description: Prevent the iOS standalone PWA bottom-bar dead-gap regression
+globs: frontend/**/*.{html,css,ts,tsx}
+alwaysApply: true
+---
+
+# iOS PWA viewport invariant
+
+- Never add `viewport-fit=cover` to `frontend/index.html`.
+- Keep `apple-mobile-web-app-status-bar-style` as `default`, never `black-translucent`.
+- Keep fixed bottom navigation anchored with `bottom: 0`; do not infer a safe area from `screen.height` or viewport-height differences.
+- `cover` plus `black-translucent` is known to shorten the standalone WebView while iOS reports `env(safe-area-inset-*)` as `0`, which raises the whole layout and leaves a dead strip under the navigation.
+- Validate viewport changes on a real iPhone installed to the home screen. Reference: `/Users/cuijian/opc-x/Ogden850App/CLAUDE.md`, section “PWA viewport & safe area”.

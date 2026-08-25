@@ -2,8 +2,10 @@ import asyncio
 import json
 import os
 import re
+import sqlite3
 import time
 from datetime import datetime
+from pathlib import Path
 from urllib.parse import quote
 
 from DrissionPage import ChromiumPage
@@ -12,6 +14,10 @@ from app.adapters.base import BaseAdapter
 from app.core.channel_config import get_channel_config
 from app.core.models import Job, SearchRequest
 from app.infra import chrome
+
+CURSOR_COOKIES = Path.home() / "Library/Application Support/Cursor/Partitions/cursor-browser/Cookies"
+DETAIL_API = "https://www.zhipin.com/wapi/zpgeek/job/detail.json"
+JD_MARKERS = ("岗位职责", "任职要求", "工作职责", "岗位要求", "职位描述")
 
 BOSS_CITY_MAP = {
     "全国": "100010000",
@@ -197,10 +203,7 @@ class BossAdapter(BaseAdapter):
                 if low and low < req.salary_min:
                     continue
 
-            labels = item.get("jobLabels") or []
-            skills = item.get("skills") or []
-            welfare = item.get("welfareList") or []
-            desc_parts = [str(x) for x in labels + skills + welfare if x]
+            skills = item.get("skills") if isinstance(item.get("skills"), list) else []
             raw = dict(item)
             raw["captured_at"] = datetime.utcnow().isoformat()
             jobs.append(
@@ -213,14 +216,144 @@ class BossAdapter(BaseAdapter):
                     city=item.get("cityName", req.city),
                     experience=item.get("jobExperience", ""),
                     education=item.get("jobDegree", ""),
-                    skills=skills if isinstance(skills, list) else [],
-                    description=" · ".join(desc_parts),
+                    skills=[str(x) for x in skills if x],
+                    description=cls._compose_description(item),
                     url=f"https://www.zhipin.com/job_detail/{item.get('encryptJobId', '')}.html",
                     raw=raw,
                 )
             )
 
         return jobs
+
+    @staticmethod
+    def _compose_description(item: dict) -> str:
+        """列表包没有岗位职责，把卡片上能用的字段排成可读摘要。"""
+        skills = item.get("skills") if isinstance(item.get("skills"), list) else []
+        welfare = item.get("welfareList") if isinstance(item.get("welfareList"), list) else []
+        lines = []
+        head = " · ".join(x for x in (item.get("jobExperience"), item.get("jobDegree")) if x)
+        if head:
+            lines.append(head)
+        loc = " ".join(x for x in (item.get("cityName"), item.get("areaDistrict"), item.get("businessDistrict")) if x)
+        if loc:
+            lines.append(loc)
+        company = " · ".join(
+            x for x in (item.get("brandIndustry"), item.get("brandStageName"), item.get("brandScaleName")) if x
+        )
+        if company:
+            lines.append(company)
+        if skills:
+            lines.append("技能：" + "、".join(str(x) for x in skills if x))
+        if welfare:
+            lines.append("福利：" + "、".join(str(x) for x in welfare if x))
+        recruiter = " ".join(x for x in (item.get("bossName"), item.get("bossTitle")) if x)
+        if recruiter:
+            lines.append("招聘：" + recruiter)
+        if lines:
+            return "\n".join(lines)
+        labels = item.get("jobLabels") or []
+        return " · ".join(str(x) for x in list(labels) + list(skills) + list(welfare) if x)
+
+    @staticmethod
+    def has_real_jd(description: str = "", raw: dict | None = None) -> bool:
+        text = (raw or {}).get("postDescription") or description or ""
+        if any(mark in text for mark in JD_MARKERS):
+            return True
+        return len(text.strip()) >= 180 and "\n" in text
+
+    @staticmethod
+    def parse_detail(data: dict) -> dict:
+        zp = data.get("zpData") if isinstance(data.get("zpData"), dict) else data
+        job_info = zp.get("jobInfo") if isinstance(zp.get("jobInfo"), dict) else {}
+        brand = zp.get("brandComInfo") if isinstance(zp.get("brandComInfo"), dict) else {}
+        if not brand:
+            brand = zp.get("brand") if isinstance(zp.get("brand"), dict) else {}
+        post = (
+            job_info.get("postDescription")
+            or job_info.get("jobDescription")
+            or zp.get("postDescription")
+            or ""
+        )
+        company = brand.get("brandName") or brand.get("comName") or job_info.get("brandName") or ""
+        intro = brand.get("brandIntroduce") or brand.get("introduce") or ""
+        return {
+            "post_description": str(post).strip(),
+            "company": str(company).strip(),
+            "company_intro": str(intro).strip(),
+        }
+
+    @classmethod
+    def _cookie_dict(cls) -> dict[str, str]:
+        cookies: dict[str, str] = {}
+        raw = get_channel_config("boss").get("cookie") or ""
+        for pair in raw.split(";"):
+            if "=" in pair:
+                key, value = pair.split("=", 1)
+                if key.strip() and value.strip():
+                    cookies[key.strip()] = value.strip()
+        if CURSOR_COOKIES.exists():
+            try:
+                con = sqlite3.connect(f"file:{CURSOR_COOKIES}?mode=ro", uri=True)
+                for name, value in con.execute(
+                    "SELECT name, value FROM cookies WHERE host_key LIKE '%zhipin%' AND value != ''"
+                ):
+                    cookies.setdefault(name, value)
+                con.close()
+            except sqlite3.Error:
+                pass
+        return cookies
+
+    @classmethod
+    def fetch_job_detail(cls, *, security_id: str, encrypt_job_id: str = "", lid: str = "") -> dict:
+        """用当前登录 Cookie 拉岗位职责。失败返回空 dict，不抛给页面。"""
+        if not security_id:
+            return {}
+        import httpx
+
+        params = {"securityId": security_id}
+        if lid:
+            params["lid"] = lid
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            ),
+            "Referer": (
+                f"https://www.zhipin.com/job_detail/{encrypt_job_id}.html"
+                if encrypt_job_id
+                else "https://www.zhipin.com/web/geek/jobs"
+            ),
+            "Accept": "application/json",
+        }
+        try:
+            with httpx.Client(trust_env=False, timeout=15, headers=headers, cookies=cls._cookie_dict()) as client:
+                response = client.get(DETAIL_API, params=params)
+            data = response.json()
+        except Exception as exc:
+            print(f"[boss] detail 请求失败: {exc}", flush=True)
+            return {}
+        if not isinstance(data, dict) or data.get("code") not in (0, None, "0"):
+            print(f"[boss] detail code={data.get('code') if isinstance(data, dict) else '?'} {data.get('message') if isinstance(data, dict) else ''}", flush=True)
+            return {}
+        return cls.parse_detail(data)
+
+    @staticmethod
+    def apply_detail(row, parsed: dict) -> bool:
+        """把详情写回 scraped_jobs 行。有岗位职责才算成功。"""
+        post = (parsed or {}).get("post_description") or ""
+        if not post:
+            return False
+        raw = dict(row.raw) if isinstance(row.raw, dict) else {}
+        raw["postDescription"] = post
+        if parsed.get("company_intro"):
+            raw["brandIntroduce"] = parsed["company_intro"]
+        raw["hydrated_at"] = datetime.utcnow().isoformat()
+        row.raw = raw
+        row.description = post
+        company = parsed.get("company") or ""
+        if company and (not row.company or row.company.endswith("...") or len(company) > len(row.company or "")):
+            row.company = company
+        return True
 
     @staticmethod
     def _parse_salary_low(salary_desc: str) -> int | None:

@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.routes.scraped import invalidate_scraped_cache
+from app.api.routes.scraped import refresh_archived_flags
+from app.core.job_origin import source_label
 from app.db.connection import get_db
 from app.db.schema import JobMark, ScrapedJob
 
@@ -24,7 +25,8 @@ class MarkRequest(BaseModel):
     state: str
 
 
-def _row_dict(m: JobMark) -> dict:
+def _row_dict(m: JobMark, job: ScrapedJob | None = None) -> dict:
+    raw = job.raw if job and isinstance(job.raw, dict) else {}
     return {
         "id": m.id,
         "channel": m.channel,
@@ -37,7 +39,10 @@ def _row_dict(m: JobMark) -> dict:
         "city": m.city,
         "skills": m.skills if isinstance(m.skills, list) else [],
         "description": m.description,
-        "url": m.url,
+        "url": m.url or (job.url if job else ""),
+        "source_label": source_label(m.channel, raw, (m.url or (job.url if job else "") or "")),
+        "is_remote": bool(job.is_remote) if job else False,
+        "value_tags": job.value_tags if job and isinstance(job.value_tags, list) else [],
         "note": m.note,
         "read_at": m.read_at,
         "created_at": m.created_at,
@@ -57,7 +62,15 @@ def list_marks(
             raise HTTPException(400, f"state 只能是 {' / '.join(STATES)}")
         q = q.filter_by(state=state)
     rows = q.order_by(JobMark.updated_at.desc()).all()
-    return {"marks": [_row_dict(r) for r in rows], "total": len(rows)}
+    if not rows:
+        return {"marks": [], "total": 0}
+    wanted = {(r.channel, r.external_id) for r in rows}
+    jobs = {
+        (j.channel, j.external_id): j
+        for j in db.query(ScrapedJob).filter(ScrapedJob.channel.in_({c for c, _ in wanted})).all()
+        if (j.channel, j.external_id) in wanted
+    }
+    return {"marks": [_row_dict(r, jobs.get((r.channel, r.external_id))) for r in rows], "total": len(rows)}
 
 
 @router.get("/index")
@@ -101,13 +114,13 @@ def set_mark(req: MarkRequest, db: Session = Depends(get_db)):
         # 再点一次同一个按钮 = 取消标记
         db.delete(existing)
         db.commit()
-        invalidate_scraped_cache()
+        refresh_archived_flags(db)
         return {"state": None, "message": "已取消"}
 
     if existing:
         existing.state = req.state
         db.commit()
-        invalidate_scraped_cache()
+        refresh_archived_flags(db)
         return {"state": existing.state, "message": "已更新", "id": existing.id}
 
     mark = JobMark(
@@ -125,7 +138,7 @@ def set_mark(req: MarkRequest, db: Session = Depends(get_db)):
     )
     db.add(mark)
     db.commit()
-    invalidate_scraped_cache()
+    refresh_archived_flags(db)
     return {"state": mark.state, "message": "已标记", "id": mark.id}
 
 
@@ -138,5 +151,5 @@ def delete_mark(mark_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Not found")
     db.delete(row)
     db.commit()
-    invalidate_scraped_cache()
+    refresh_archived_flags(db)
     return {"ok": True}

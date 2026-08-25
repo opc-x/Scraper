@@ -5,7 +5,7 @@
 
 用法：
     python -m scripts.mine_boss_jobs
-    python -m scripts.mine_boss_jobs --min-jobs 150 --pages 10
+    python -m scripts.mine_boss_jobs --min-jobs 400 --pages 10
     python -m scripts.mine_boss_jobs --dry-run
 """
 
@@ -206,17 +206,17 @@ def dump(kept: dict[str, Job], seen: dict[str, Job], dry_run: bool) -> list[Job]
     OUT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
     tag_counts = Counter(tag for job in rows for tag in job.raw.get("buckets") or [])
     print(f"[boss] 抓到 {len(seen)} 条，筛后 {len(rows)} {dict(tag_counts)} -> {OUT_JSON}", file=sys.stderr)
-    if not dry_run and rows:
+    if not dry_run and seen:
         from app.db.persist import persist_scraped_jobs
 
-        persist_scraped_jobs(rows)
-        print(f"[boss] 已写入 scraped_jobs {len(rows)} 条", file=sys.stderr)
+        persist_scraped_jobs(list(seen.values()))
+        print(f"[boss] 已写入 scraped_jobs {len(seen)} 条（短名单 {len(rows)}）", file=sys.stderr)
     return rows
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--min-jobs", type=int, default=150)
+    ap.add_argument("--min-jobs", type=int, default=400, help="唯一职位抓够这么多条就停（全量落库，不是短名单）")
     ap.add_argument("--pages", type=int, default=10)
     ap.add_argument("--sleep", type=float, default=4.0)
     ap.add_argument("--verify-timeout", type=int, default=300)
@@ -290,10 +290,10 @@ def main() -> None:
                     flush=True,
                 )
                 dump(kept, seen, args.dry_run)
-                if len(kept) >= args.min_jobs and page_no >= 3:
+                if len(seen) >= args.min_jobs and page_no >= 3:
                     break
                 time.sleep(args.sleep)
-            if blocked or len(kept) >= args.min_jobs:
+            if blocked or len(seen) >= args.min_jobs:
                 break
     finally:
         dump(kept, seen, args.dry_run)

@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from app.core.resume import HARD_RULES, PROFILE
 from app.db.connection import engine
-from app.infra.local_ai import run_sync
+from app.infra.local_ai import LocalAiError, run_sync
 from app.core.job_quality import evaluate_job
 
 PROMPT = """你是求职岗位匹配评分器。严格按候选人画像和硬性口径给每个岗位打 0-100 分。
@@ -50,7 +50,11 @@ def _score_batch(rows: list[dict], engine_name: str, timeout: int) -> tuple[list
     } for row in rows]
     prompt = PROMPT.format(profile=PROFILE, rules=HARD_RULES,
                            jobs=json.dumps(jobs, ensure_ascii=False, default=str))
-    return rows, run_sync(prompt, engine=engine_name, timeout=timeout)
+    try:
+        return rows, run_sync(prompt, engine=engine_name, timeout=timeout)
+    except LocalAiError as exc:
+        print(f"[ai] {exc}", flush=True)
+        return rows, None
 
 
 def _parse_scores(rows: list[dict], data: dict | None) -> list[tuple[int, int]]:
